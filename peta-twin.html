@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mochi · PETA Twin — 宠物智能孪生</title>
+<link rel="icon" href="design-assets/cat-head.png">
+<script>
+  // Apply the saved theme before first paint to avoid a flash.
+  try {
+    const q = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = (q === 'dark' || q === 'light') ? q : (localStorage.getItem('peta-theme') || 'light');
+  } catch (e) {}
+</script>
+<link rel="preload" as="image" href="design-assets/cat-twin.png">
+<link rel="preload" as="image" href="design-assets/cat-twin-light.png">
+<link rel="preload" as="image" href="design-assets/cat-head.png">
+<link rel="preload" as="image" href="design-assets/cat-cam-view3.png">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  /* ============ design tokens ============ */
+  :root {
+    --font: "Inter", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    --font-num: "Inter", "SF Pro Display", "SF Pro Text", -apple-system, "Helvetica Neue", system-ui, sans-serif;
+    --ease: cubic-bezier(.22, .72, .22, 1);
+    --scale: 1;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+    --bg: #F2F7F4;
+    --panel: rgba(255, 255, 255, .91);
+    --panel-border: rgba(12, 42, 36, .075);
+    --panel-shadow: 0 16px 40px rgba(10, 55, 44, .10);
+    --panel-shadow-hover: 0 24px 54px rgba(10, 55, 44, .16);
+    --text: #12211D;
+    --sub: #536762;
+    --faint: #7E938D;
+    --mint: #0B9F7B;
+    --green: #129B6C;
+    --blue: #2F7FDC;
+    --orange: #D9882C;
+    --coral: #DE5B6E;
+    --purple: #7659DE;
+    --purple-ink: #5B45C4;
+    --coral-ink: #C24E60;
+    --live-ink: #0B5F4F;
+    --tag-ink-blue: #1F5E9E;
+    --tint-green: rgba(18, 155, 108, .09);
+    --tint-orange: rgba(217, 136, 44, .12);
+    --tint-blue: rgba(47, 127, 220, .12);
+    --tint-coral: rgba(222, 91, 110, .12);
+    --tint-purple: rgba(118, 89, 222, .09);
+    --tint-mint: rgba(11, 159, 123, .08);
+    --track: rgba(12, 42, 36, .07);
+    --hairline: rgba(12, 42, 36, .055);
+    --divider: rgba(12, 42, 36, .07);
+    --glass: rgba(255, 255, 255, .72);
+    --glass-hover: rgba(255, 255, 255, .92);
+    --glass-border: rgba(12, 42, 36, .07);
+    --dock: rgba(255, 255, 255, .92);
+    --tag-bg: rgba(255, 255, 255, .90);
+    --tag-border-mint: rgba(11, 159, 123, .22);
+    --tag-border-blue: rgba(47, 127, 220, .22);
+    --tag-shadow: 0 4px 14px rgba(11, 42, 36, .10);
+    --nav-pill: rgba(11, 159, 123, .09);
+    --nav-pill-border: rgba(11, 159, 123, .20);
+    --btn-bg: #F1F6F3;
+    --btn-border: rgba(12, 42, 36, .07);
+    --btn-hover: rgba(11, 159, 123, .10);
+    --sleep-deep: #6F5BE0;
+    --sleep-light: #A99AF2;
+    --sleep-awake: #E09A45;
+    --orbit: rgba(11, 159, 123, .14);
+    --ground-ring: rgba(11, 159, 123, .24);
+    --ground-ring-inner: rgba(11, 159, 123, .15);
+    --glow: rgba(79, 198, 168, .24);
+    --toast-bg: rgba(18, 33, 29, .92);
+    --toast-text: #F2F7F4;
+    --play-bg: rgba(255, 255, 255, .92);
+    --play-ink: #0B111B;
+    --cam-ink: #FFFFFF;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #070A11;
+    --panel: rgba(15, 24, 36, .90);
+    --panel-border: rgba(255, 255, 255, .075);
+    --panel-shadow: 0 18px 46px rgba(0, 0, 0, .42);
+    --panel-shadow-hover: 0 26px 60px rgba(0, 0, 0, .54);
+    --text: #F2F6FB;
+    --sub: #9AA8B9;
+    --faint: #66768B;
+    --mint: #57E6C1;
+    --green: #5BE39A;
+    --blue: #5CB8FF;
+    --orange: #FFB05C;
+    --coral: #FF7C8C;
+    --purple: #A58BFF;
+    --purple-ink: #C8BFFF;
+    --coral-ink: #FFA6B2;
+    --live-ink: #CFFBF0;
+    --tag-ink-blue: #D8ECFF;
+    --tint-green: rgba(91, 227, 154, .09);
+    --tint-orange: rgba(255, 176, 92, .10);
+    --tint-blue: rgba(92, 184, 255, .10);
+    --tint-coral: rgba(255, 124, 140, .10);
+    --tint-purple: rgba(165, 139, 255, .09);
+    --tint-mint: rgba(87, 230, 193, .08);
+    --track: rgba(255, 255, 255, .06);
+    --hairline: rgba(255, 255, 255, .055);
+    --divider: rgba(255, 255, 255, .075);
+    --glass: rgba(14, 25, 38, .80);
+    --glass-hover: rgba(22, 36, 52, .92);
+    --glass-border: rgba(255, 255, 255, .07);
+    --dock: rgba(12, 21, 34, .90);
+    --tag-bg: rgba(11, 20, 32, .82);
+    --tag-border-mint: rgba(87, 230, 193, .20);
+    --tag-border-blue: rgba(92, 184, 255, .20);
+    --tag-shadow: 0 4px 16px rgba(0, 0, 0, .44);
+    --nav-pill: rgba(87, 230, 193, .09);
+    --nav-pill-border: rgba(87, 230, 193, .20);
+    --btn-bg: rgba(14, 25, 38, .78);
+    --btn-border: rgba(255, 255, 255, .07);
+    --btn-hover: rgba(87, 230, 193, .10);
+    --sleep-deep: #7C6BFF;
+    --sleep-light: #BCAEFF;
+    --sleep-awake: #FFB05C;
+    --orbit: rgba(87, 230, 193, .14);
+    --ground-ring: rgba(87, 230, 193, .24);
+    --ground-ring-inner: rgba(87, 230, 193, .15);
+    --glow: rgba(79, 198, 168, .26);
+    --toast-bg: rgba(242, 247, 244, .94);
+    --toast-text: #12211D;
+    --play-bg: rgba(255, 255, 255, .92);
+    --play-ink: #0B111B;
+    --cam-ink: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+
+  /* smooth palette crossfade only while switching themes */
+  html.theming .stage,
+  html.theming .stage * {
+    transition:
+      background-color .55s var(--ease),
+      border-color .55s var(--ease),
+      color .55s var(--ease),
+      box-shadow .55s var(--ease),
+      fill .55s var(--ease),
+      stroke .55s var(--ease),
+      opacity .55s var(--ease) !important;
+  }
+
+  .viewport {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    transition: background-color .55s var(--ease);
+  }
+  .stage {
+    position: relative;
+    flex: none;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--bg);
+    transform: scale(var(--scale));
+    transform-origin: center center;
+    font-size: 13px;
+    user-select: none;
+  }
+
+  /* ============ ambient background : two crossfading layers ============ */
+  .fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity .6s var(--ease);
+    will-change: opacity;
+  }
+  .fx-light {
+    background-color: #F2F7F4;
+    background-image:
+      radial-gradient(700px 560px at 47% 47%, rgba(99, 203, 177, .24), rgba(99, 203, 177, 0) 66%),
+      radial-gradient(400px 400px at 72% 40%, rgba(127, 178, 238, .18), rgba(127, 178, 238, 0) 70%),
+      radial-gradient(560px 280px at 48% 82%, rgba(255, 194, 138, .26), rgba(255, 194, 138, 0) 72%),
+      linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 17%);
+  }
+  .fx-dark {
+    opacity: 0;
+    background-color: #070A11;
+    background-image:
+      radial-gradient(700px 560px at 47% 47%, rgba(18, 75, 77, .55), rgba(18, 75, 77, 0) 66%),
+      radial-gradient(400px 400px at 72% 40%, rgba(28, 63, 110, .45), rgba(28, 63, 110, 0) 70%),
+      radial-gradient(560px 280px at 48% 82%, rgba(255, 176, 92, .10), rgba(255, 176, 92, 0) 72%),
+      linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, 0) 17%);
+  }
+  html[data-theme="dark"] .fx-light { opacity: 0; }
+  html[data-theme="dark"] .fx-dark { opacity: 1; }
+
+  /* ============ shared bits ============ */
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; letter-spacing: -.5px; }
+  .ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-fill { fill: currentColor; stroke: none; }
+  .pulse-dot { position: relative; }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0;
+    animation: ping 2.4s var(--ease) infinite;
+  }
+
+  /* ============ header ============ */
+  .topbar { position: absolute; inset: 0 0 auto 0; height: 112px; z-index: 20; }
+  .brand { position: absolute; left: 48px; top: 34px; display: flex; align-items: center; gap: 14px; }
+  .avatar-wrap { position: relative; width: 54px; height: 54px; flex: none; }
+  .avatar {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: url("design-assets/cat-head.png") center / cover no-repeat, #E9E5DA;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .75), 0 6px 14px rgba(11, 42, 36, .10);
+  }
+  html[data-theme="dark"] .avatar {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .18), 0 6px 16px rgba(0, 0, 0, .40);
+  }
+  .online {
+    position: absolute; right: -2px; bottom: -1px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--mint);
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+  .online::after {
+    content: ""; position: absolute; inset: -2px; border-radius: 50%;
+    border: 1.5px solid var(--mint); opacity: 0; animation: ping 2.8s var(--ease) infinite;
+  }
+  .brand-text { display: flex; flex-direction: column; gap: 5px; }
+  .brand-name { font-size: 25px; font-weight: 700; letter-spacing: -.4px; line-height: 1; }
+  .brand-meta { font-size: 11px; color: var(--sub); line-height: 1; letter-spacing: .1px; }
+  .brand-meta .sep { opacity: .5; margin: 0 2px; }
+
+  .hr-divider { position: absolute; top: 45px; width: 1px; height: 38px; background: var(--divider); }
+
+  .device-chip { position: absolute; left: 366px; top: 44px; height: 42px; display: flex; align-items: center; gap: 12px; }
+  .device-chip-icon {
+    width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+    background: var(--tint-mint); color: var(--mint);
+  }
+  .device-chip-text { display: flex; flex-direction: column; gap: 5px; line-height: 1; }
+  .device-chip-title { font-size: 13px; font-weight: 600; }
+  .device-chip-sub { font-size: 10.5px; color: var(--mint); letter-spacing: .1px; }
+
+  .live-pill {
+    position: absolute; left: 790px; top: 42px;
+    width: 330px; height: 44px; padding: 0 14px 0 24px;
+    display: flex; align-items: center; gap: 10px;
+    border-radius: 22px;
+    background: var(--glass);
+    border: 1px solid var(--tag-border-mint);
+    box-shadow: 0 8px 22px rgba(11, 159, 123, .10);
+    backdrop-filter: blur(20px) saturate(130%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
+  }
+  .live-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); color: var(--mint); flex: none; }
+  .live-pill-text { font-size: 12px; font-weight: 500; color: var(--live-ink); letter-spacing: .1px; white-space: nowrap; }
+  .latency {
+    margin-left: auto;
+    height: 18px; padding: 0 9px; border-radius: 9px;
+    display: inline-flex; align-items: center;
+    background: var(--tint-mint); color: var(--mint);
+    font-size: 9.5px; font-weight: 600; letter-spacing: .2px;
+  }
+
+  .battery-pill {
+    position: absolute; left: 1510px; top: 44px;
+    width: 94px; height: 38px; padding: 0 10px;
+    display: flex; align-items: center; gap: 8px;
+    border-radius: 19px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+  }
+  .battery-pill .ic { color: var(--green); }
+  .battery-pill span { font-size: 13px; font-weight: 600; }
+
+  .wifi { position: absolute; left: 1622px; top: 53px; color: var(--sub); }
+
+  .clock { position: absolute; left: 1682px; top: 43px; display: flex; flex-direction: column; gap: 3px; }
+  .clock-date { font-size: 10px; color: var(--sub); line-height: 1.2; letter-spacing: .1px; }
+  .clock-time { font-size: 22px; font-weight: 600; line-height: 1.05; letter-spacing: .2px; }
+
+  .icon-btn {
+    position: absolute; top: 44px;
+    width: 40px; height: 40px; border-radius: 20px;
+    display: grid; place-items: center;
+    color: var(--sub);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    transition: background .25s var(--ease), color .25s var(--ease), transform .25s var(--ease);
+  }
+  .icon-btn:hover { background: var(--glass-hover); color: var(--text); transform: translateY(-1px); }
+  .theme-btn { left: 1764px; }
+  .settings-btn { left: 1816px; }
+  .theme-btn .ic {
+    position: absolute; left: 50%; top: 50%; margin: -10px 0 0 -10px;
+    transition: opacity .35s var(--ease), transform .45s var(--ease);
+  }
+  .theme-btn .sun { opacity: 0; transform: rotate(-70deg) scale(.5); }
+  html[data-theme="dark"] .theme-btn .sun { opacity: 1; transform: none; }
+  html[data-theme="dark"] .theme-btn .moon { opacity: 0; transform: rotate(70deg) scale(.5); }
+  html[data-theme="light"] .theme-btn .moon { opacity: 1; transform: none; }
+
+  /* ============ cards ============ */
+  .card {
+    position: absolute;
+    border-radius: 24px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--panel-shadow);
+    backdrop-filter: blur(24px) saturate(125%);
+    -webkit-backdrop-filter: blur(24px) saturate(125%);
+    transition: box-shadow .35s var(--ease), transform .35s var(--ease);
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--panel-shadow-hover); }
+
+  .card-head {
+    position: absolute; left: 22px; right: 22px; top: 16px; height: 24px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; line-height: 1; letter-spacing: .1px; }
+  .card-chev { position: absolute; right: 0; top: 1px; color: var(--faint); transition: transform .25s var(--ease), color .25s var(--ease); }
+  .card:hover .card-chev { transform: translateX(2px); color: var(--sub); }
+  .card-head .ic { flex: none; }
+
+  /* ---- health ---- */
+  .health-card { left: 48px; top: 132px; width: 396px; height: 352px; }
+  .live-chip {
+    position: absolute; left: 310px; top: 20px; width: 64px; height: 22px;
+    border-radius: 11px; background: var(--tint-green);
+    display: flex; align-items: center; gap: 6px; padding-left: 10px;
+  }
+  .live-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); color: var(--green); flex: none; }
+  .live-chip span { font-size: 10px; color: var(--green); line-height: 1; }
+
+  .hrow { position: absolute; left: 22px; width: 352px; height: 74px; }
+  .hrow-1 { top: 60px; }
+  .hrow-2 { top: 146px; }
+  .hrow-3 { top: 232px; }
+  .icon-badge {
+    position: absolute; left: 0; top: 6px; width: 46px; height: 46px;
+    border-radius: 15px; display: grid; place-items: center;
+  }
+  .t-orange { background: var(--tint-orange); color: var(--orange); }
+  .t-blue { background: var(--tint-blue); color: var(--blue); }
+  .t-coral { background: var(--tint-coral); color: var(--coral); }
+  .t-green { background: var(--tint-green); color: var(--green); }
+  .hrow .label { position: absolute; left: 58px; top: 1px; font-size: 11px; color: var(--sub); line-height: 1.2; }
+  .hrow .value { position: absolute; left: 58px; top: 13px; font-size: 30px; font-weight: 600; line-height: 1; letter-spacing: -1px; }
+  .hrow .unit { position: absolute; top: 33px; font-size: 13px; color: var(--sub); line-height: 1; }
+  .hrow .badge {
+    position: absolute; left: 278px; top: 1px; width: 46px; height: 20px;
+    border-radius: 10px; background: var(--tint-green);
+    display: grid; place-items: center;
+    font-size: 9.5px; color: var(--green); line-height: 1;
+  }
+  .hrow .spark { position: absolute; left: 264px; top: 28px; width: 88px; height: 30px; overflow: visible; }
+  .spark path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .health-div { position: absolute; left: 22px; width: 352px; height: 1px; background: var(--hairline); }
+  .health-div-1 { top: 140px; }
+  .health-div-2 { top: 226px; }
+  .health-note { position: absolute; left: 22px; top: 318px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+
+  /* ---- activity ---- */
+  .activity-card { left: 48px; top: 504px; width: 396px; height: 376px; }
+  .steps { position: absolute; left: 22px; top: 48px; font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .steps-unit { position: absolute; left: 128px; top: 72px; font-size: 14px; color: var(--sub); line-height: 1; }
+  .goal-label { position: absolute; left: 22px; top: 107px; font-size: 10.5px; color: var(--faint); line-height: 1.2; }
+  .goal-track { position: absolute; left: 22px; top: 132px; width: 218px; height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
+  .goal-fill { height: 100%; width: 68.4%; border-radius: 3px; background: var(--mint); }
+  .goal-track::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38), transparent);
+    transform: translateX(-100%); animation: shimmer 5.5s ease-in-out infinite;
+  }
+
+  .ring-wrap { position: absolute; left: 254px; top: 48px; width: 120px; height: 120px; }
+  .ring-wrap svg { display: block; overflow: visible; }
+  .ring-track { fill: none; stroke: var(--track); stroke-width: 10.8; }
+  .ring-progress { fill: none; stroke: var(--mint); stroke-width: 10.8; stroke-linecap: round; transition: stroke-dashoffset 1.2s var(--ease); }
+  html[data-still] .ring-progress { transition: none; }
+  .ring-value { position: absolute; left: 0; top: 70px; width: 120px; text-align: center; font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+
+  .metrics { position: absolute; left: 22px; top: 185px; width: 352px; height: 18px; }
+  .metric { position: absolute; top: 0; display: flex; align-items: flex-start; gap: 6px; white-space: nowrap; }
+  .metric .ic { margin-top: 3px; }
+  .metric .val { font-size: 12px; font-weight: 600; line-height: 1; margin-top: 1px; }
+  .metric .u { font-size: 10px; color: var(--faint); line-height: 1; margin-top: 2px; }
+  .metric-1 { left: 0; }
+  .metric-2 { left: 106px; }
+  .metric-3 { left: 214px; }
+
+  .chart-label { position: absolute; left: 22px; top: 217px; font-size: 10.5px; color: var(--faint); line-height: 1.2; }
+  .bars { position: absolute; left: 22px; bottom: 76px; width: 352px; height: 45px; }
+  .bars .bar { position: absolute; bottom: 0; width: 7px; border-radius: 3.5px; background: var(--mint); transform-origin: 50% 100%; }
+  .chart-note { position: absolute; left: 22px; top: 329px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+
+  /* ---- sleep ---- */
+  .sleep-card { left: 1476px; top: 132px; width: 396px; height: 300px; }
+  .sleep-h { position: absolute; left: 22px; top: 44px; font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: -1.5px; }
+  .sleep-h-unit { position: absolute; left: 52px; top: 61px; font-size: 16px; color: var(--sub); line-height: 1; }
+  .sleep-m { position: absolute; left: 76px; top: 44px; font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: -1.5px; }
+  .sleep-m-unit { position: absolute; left: 128px; top: 63px; font-size: 13px; color: var(--sub); line-height: 1; }
+  .sleep-sub { position: absolute; left: 22px; top: 93px; font-size: 10.5px; color: var(--faint); line-height: 1.2; }
+
+  .sleep-bars { position: absolute; left: 22px; bottom: 110px; width: 352px; height: 64px; }
+  .sleep-bars .bar { position: absolute; bottom: 0; width: 8px; border-radius: 4px; transform-origin: 50% 100%; }
+  .stage-deep { background: var(--sleep-deep); opacity: .95; }
+  .stage-light { background: var(--sleep-light); opacity: .72; }
+  .stage-awake { background: var(--sleep-awake); opacity: .95; }
+
+  .legend { position: absolute; top: 209px; display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--sub); white-space: nowrap; }
+  .legend .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .legend-1 { left: 22px; }
+  .legend-2 { left: 142px; }
+  .legend-3 { left: 262px; }
+  .insight {
+    position: absolute; left: 22px; top: 238px; width: 352px; height: 38px;
+    border-radius: 12px; background: var(--tint-purple);
+    display: flex; align-items: center; gap: 7px; padding: 0 12px;
+    color: var(--purple-ink); font-size: 10.5px;
+  }
+  .insight .ic { color: var(--purple); flex: none; }
+
+  /* ---- live monitor ---- */
+  .live-card { left: 1476px; top: 450px; width: 396px; height: 300px; }
+  .live-badge {
+    position: absolute; left: 286px; top: 18px; width: 68px; height: 22px;
+    border-radius: 11px; background: var(--tint-coral);
+    display: flex; align-items: center; gap: 6px; padding-left: 10px;
+  }
+  .live-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--coral); color: var(--coral); flex: none; }
+  .live-badge span { font-size: 9.5px; color: var(--coral-ink); line-height: 1; }
+  .cam {
+    position: absolute; left: 22px; top: 50px; width: 352px; height: 150px;
+    border-radius: 16px; overflow: hidden; background: #05080F;
+    cursor: pointer;
+  }
+  .cam img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    animation: kenburns 24s ease-in-out infinite alternate;
+  }
+  .cam-fade {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 96px; pointer-events: none;
+    background: linear-gradient(180deg, rgba(5, 8, 15, 0), rgba(5, 8, 15, .82));
+  }
+  .cam-tag {
+    position: absolute; left: 12px; top: 12px; height: 24px; padding: 0 10px;
+    border-radius: 12px; background: rgba(5, 8, 15, .78);
+    display: flex; align-items: center; gap: 6px;
+    font-size: 9.5px; color: #DDE7F4; letter-spacing: .1px;
+    backdrop-filter: blur(6px);
+  }
+  .cam-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--coral); }
+  .cam-time { position: absolute; right: 12px; top: 13px; font-size: 9px; color: rgba(255, 255, 255, .62); letter-spacing: .3px; font-variant-numeric: tabular-nums; }
+  .cam.replaying img { filter: brightness(.82) saturate(.7); }
+  .cam.replaying::after {
+    content: "回看模式 · 昨日 19:00 — 19:30";
+    position: absolute; left: 12px; bottom: 12px;
+    padding: 5px 9px; border-radius: 8px;
+    background: rgba(5, 8, 15, .74); color: #fff;
+    font-size: 9px; letter-spacing: .2px; line-height: 1;
+    backdrop-filter: blur(6px);
+  }
+  .play-btn {
+    position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px;
+    border-radius: 50%; background: var(--play-bg); color: var(--play-ink);
+    display: grid; place-items: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+    transition: transform .25s var(--ease), background .25s var(--ease);
+  }
+  .play-btn:hover { transform: scale(1.08); }
+  .play-btn .ic { margin-left: 2px; }
+  .replay-btn {
+    position: absolute; left: 22px; top: 214px; width: 352px; height: 46px;
+    border-radius: 12px; background: var(--btn-bg); border: 1px solid var(--btn-border);
+    display: flex; align-items: center; gap: 9px; padding: 0 17px;
+    transition: background .25s var(--ease), border-color .25s var(--ease);
+  }
+  .replay-btn:hover { background: var(--btn-hover); border-color: var(--tag-border-mint); }
+  .replay-btn .ic { color: var(--blue); flex: none; }
+  .replay-btn em { font-style: normal; font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1; }
+  .replay-btn .sub { margin-left: auto; font-size: 10px; color: var(--faint); line-height: 1; }
+  .replay-btn .chev { margin-left: 8px; color: var(--sub); flex: none; }
+
+  /* ---- device ---- */
+  .device-card { left: 1476px; top: 768px; width: 396px; height: 112px; }
+  .device-icon { position: absolute; left: 22px; top: 32px; width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: var(--tint-green); color: var(--green); }
+  .device-label { position: absolute; left: 84px; top: 27px; font-size: 11px; color: var(--sub); line-height: 1.2; }
+  .device-value { position: absolute; left: 84px; top: 43px; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -.6px; }
+  .device-sub { position: absolute; left: 150px; top: 54px; font-size: 10px; color: var(--faint); line-height: 1; }
+  .device-track { position: absolute; left: 84px; top: 82px; width: 220px; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .device-fill { height: 100%; width: 78%; border-radius: 2px; background: var(--green); }
+  .device-badge { position: absolute; left: 286px; top: 28px; width: 60px; height: 20px; border-radius: 10px; background: var(--tint-green); display: grid; place-items: center; font-size: 9.5px; color: var(--green); line-height: 1; }
+  .device-chev { position: absolute; left: 360px; top: 46px; color: var(--faint); }
+
+  /* ---- center stage ---- */
+  .stage-glow {
+    position: absolute; left: 560px; top: 380px; width: 800px; height: 620px;
+    background: radial-gradient(closest-side, var(--glow), rgba(79, 198, 168, 0) 72%);
+    filter: blur(55px); pointer-events: none;
+  }
+  .orbit { position: absolute; left: 620px; top: 196px; width: 700px; height: 700px; border: 1.2px solid var(--orbit); border-radius: 50%; pointer-events: none; }
+  .orbit-spin { position: absolute; inset: 0; animation: spin 42s linear infinite; }
+  .orbit-spin i {
+    position: absolute; left: calc(50% - 3px); top: -4px; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--mint); box-shadow: 0 0 12px 2px var(--mint); opacity: .75;
+  }
+  .ground-glow {
+    position: absolute; left: 620px; top: 800px; width: 680px; height: 126px;
+    background: radial-gradient(closest-side, var(--glow), rgba(11, 159, 123, 0) 72%);
+    filter: blur(26px); opacity: .9; pointer-events: none;
+  }
+  .ground-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+  .ring-outer { left: 692px; top: 838px; width: 536px; height: 76px; border: 1.5px solid var(--ground-ring); }
+  .ring-inner { left: 736px; top: 852px; width: 448px; height: 48px; border: 1px solid var(--ground-ring-inner); }
+
+  .cat { position: absolute; left: 510px; top: 78px; width: 900px; height: 788px; transform-origin: 50% 92%; animation: catFloat 7s ease-in-out infinite; }
+  .cat-gl { position: absolute; inset: 0; }
+  .cat-gl canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .sensor-tag {
+    position: absolute; height: 30px; border-radius: 10px;
+    display: flex; align-items: center; gap: 6px; padding: 0 12px;
+    background: var(--tag-bg); box-shadow: var(--tag-shadow);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    font-size: 9.5px; line-height: 1; white-space: nowrap;
+    animation: tagFloat 6.5s ease-in-out infinite;
+  }
+  .tag-imu { left: 1178px; top: 292px; width: 150px; border: 1px solid var(--tag-border-mint); color: var(--mint); animation-delay: -1.8s; }
+  .tag-imu .ic { color: var(--mint); }
+
+  .quote {
+    position: absolute; left: 752px; top: 884px; width: 418px; height: 52px;
+    border-radius: 26px; display: flex; align-items: center; gap: 10px;
+    padding: 0 30px 0 24px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 26px rgba(11, 42, 36, .09);
+    backdrop-filter: blur(20px) saturate(130%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
+  }
+  .quote > .ic { color: var(--mint); flex: none; }
+  .quote-text { font-size: 12.5px; color: var(--text); line-height: 1; white-space: nowrap; letter-spacing: .1px; }
+  .voice { display: flex; align-items: center; gap: 2.5px; height: 18px; margin-left: auto; }
+  .voice i {
+    display: block; width: 2.5px; height: var(--h); border-radius: 1.5px;
+    background: var(--mint); opacity: var(--o);
+    animation: voiceWave 1.7s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * -.13s);
+  }
+
+  /* ---- dock ---- */
+  .dock {
+    position: absolute; left: 650px; top: 970px; width: 620px; height: 74px;
+    border-radius: 37px; background: var(--dock);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 14px 38px rgba(11, 42, 36, .12);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+  }
+  html[data-theme="dark"] .dock { box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
+  .nav-pill {
+    position: absolute; left: 10px; top: 12px; width: 112px; height: 52px;
+    border-radius: 26px; background: var(--nav-pill); border: 1px solid var(--nav-pill-border);
+    transition: left .45s var(--ease);
+  }
+  .nav {
+    position: absolute; left: 10px; top: 12px; width: 112px; height: 52px;
+    border-radius: 26px; display: flex; align-items: center; gap: 8px;
+    padding-left: 24px; color: var(--sub); transition: color .25s var(--ease);
+  }
+  .nav .ic { width: 20px; height: 20px; flex: none; }
+  .nav span { font-size: 12.5px; font-weight: 500; line-height: 1; }
+  .nav:hover { color: var(--mint); }
+  .nav.active { color: var(--mint); }
+  .nav.active span { font-weight: 600; }
+
+  .engine { position: absolute; left: 48px; top: 995px; display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+  .engine .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); }
+  .sync { position: absolute; left: 1476px; top: 995px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+
+  .cam-debug {
+    position: absolute; top: 980px; right: 24px; width: 320px;
+    padding: 9px 14px 11px; border-radius: 14px;
+    background: var(--toast-bg); color: var(--toast-text);
+    font-family: var(--font-num); font-size: 11px; line-height: 2.05;
+    z-index: 30; pointer-events: none;
+  }
+  .cam-debug-title { font-family: var(--font); font-size: 9.5px; letter-spacing: .2px; opacity: .7; margin-bottom: 3px; }
+  .cam-debug-row { display: flex; gap: 8px; white-space: nowrap; }
+  .cam-debug-row span { opacity: .65; }
+  .cam-debug-row b { font-weight: 500; }
+  .cam-copy {
+    position: absolute; top: 5px; right: 5px; height: 18px; padding: 0 7px;
+    border: 0; border-radius: 9px; background: var(--toast-bg); color: var(--toast-text);
+    font-family: var(--font); font-size: 10px; line-height: 18px; cursor: pointer; opacity: .8;
+  }
+  .cam-copy:hover { opacity: 1; }
+  .cam-debug .cam-copy { pointer-events: auto; }
+
+  .toast {
+    position: absolute; left: 50%; top: 114px; z-index: 40;
+    transform: translate(-50%, -8px);
+    padding: 9px 16px; border-radius: 14px;
+    background: var(--toast-bg); color: var(--toast-text);
+    font-size: 11.5px; letter-spacing: .2px; white-space: nowrap;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .20);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s var(--ease), transform .3s var(--ease);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---- motion ---- */
+  @keyframes ping { 0% { transform: scale(.7); opacity: .65; } 70%, 100% { transform: scale(1.9); opacity: 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes catFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.006); }
+  }
+  @keyframes tagFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  @keyframes kenburns {
+    0% { transform: scale(1.01) translate(0, 0); }
+    100% { transform: scale(1.055) translate(-1%, -1%); }
+  }
+  @keyframes shimmer { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  @keyframes voiceWave { from { transform: scaleY(.45); } to { transform: scaleY(1.15); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="viewport">
+  <div class="stage" id="stage">
+    <div class="fx fx-light"></div>
+    <div class="fx fx-dark"></div>
+    <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+      <defs>
+        <symbol id="i-heart" viewBox="0 0 24 24">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
+        </symbol>
+        <symbol id="i-shirt" viewBox="0 0 24 24">
+          <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23Z"/>
+        </symbol>
+        <symbol id="i-battery" viewBox="0 0 24 24">
+          <rect x="2" y="7" width="16" height="10" rx="2"/>
+          <path d="M22 11v2"/>
+          <path d="m11 7-3 5h4l-3 5"/>
+        </symbol>
+        <symbol id="i-wifi" viewBox="0 0 24 24">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+          <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+          <circle cx="12" cy="20" r="1"/>
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </symbol>
+        <symbol id="i-footprints" viewBox="0 0 24 24">
+          <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"/>
+          <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"/>
+          <path d="M16 17h4"/>
+          <path d="M4 13h4"/>
+        </symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+        <symbol id="i-thermo" viewBox="0 0 24 24">
+          <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+        </symbol>
+        <symbol id="i-droplets" viewBox="0 0 24 24">
+          <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+          <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </symbol>
+        <symbol id="i-video" viewBox="0 0 24 24">
+          <path d="m22 8-6 4 6 4V8Z"/>
+          <rect x="2" y="6" width="14" height="12" rx="2"/>
+        </symbol>
+        <symbol id="i-history" viewBox="0 0 24 24">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M12 7v5l4 2"/>
+        </symbol>
+        <symbol id="i-sparkles" viewBox="0 0 24 24">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/>
+        </symbol>
+        <symbol id="i-radio" viewBox="0 0 24 24">
+          <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+          <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
+          <circle cx="12" cy="12" r="2"/>
+          <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/>
+          <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+        </symbol>
+        <symbol id="i-mic" viewBox="0 0 24 24">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <path d="M12 19v3"/>
+        </symbol>
+        <symbol id="i-paw" viewBox="0 0 24 24">
+          <g fill="currentColor" stroke="none">
+            <ellipse cx="6" cy="10" rx="2.1" ry="2.3"/>
+            <ellipse cx="9.6" cy="6.4" rx="2.1" ry="2.3"/>
+            <ellipse cx="14.4" cy="6.4" rx="2.1" ry="2.3"/>
+            <ellipse cx="18" cy="10" rx="2.1" ry="2.3"/>
+            <path d="M12 13c-2.9 0-5.2 2-5.2 4.4 0 2 1.7 3.2 3.6 3.2.8 0 1.1-.3 1.6-.3s.8.3 1.6.3c1.9 0 3.6-1.2 3.6-3.2C17.2 15 14.9 13 12 13Z"/>
+          </g>
+        </symbol>
+        <symbol id="i-house" viewBox="0 0 24 24">
+          <path d="M3 10.5 12 3l9 7.5"/>
+          <path d="M5 9.5V21h14V9.5"/>
+          <path d="M9.5 21v-6h5v6"/>
+        </symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+        <symbol id="i-cpu" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
+          <rect x="9" y="9" width="6" height="6"/>
+          <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>
+        </symbol>
+        <symbol id="i-dots" viewBox="0 0 24 24">
+          <g fill="currentColor" stroke="none">
+            <circle cx="5" cy="12" r="1.6"/>
+            <circle cx="12" cy="12" r="1.6"/>
+            <circle cx="19" cy="12" r="1.6"/>
+          </g>
+        </symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24">
+          <path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"/>
+          <circle cx="12" cy="10" r="3"/>
+        </symbol>
+        <symbol id="i-flame" viewBox="0 0 24 24">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+        </symbol>
+        <symbol id="i-timer" viewBox="0 0 24 24">
+          <circle cx="12" cy="14" r="8"/>
+          <path d="M12 14v-4"/>
+          <path d="M9 2h6"/>
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <g fill="currentColor" stroke="none"><rect x="7" y="5" width="3.6" height="14" rx="1"/><rect x="13.4" y="5" width="3.6" height="14" rx="1"/></g>
+        </symbol>
+      </defs>
+    </svg>
+    <header class="topbar">
+      <div class="brand">
+        <div class="avatar-wrap">
+          <div class="avatar" role="img" aria-label="Mochi 的头像"></div>
+          <div class="online"></div>
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">Mochi</div>
+          <div class="brand-meta">在线&nbsp;&nbsp;·&nbsp;&nbsp;英国短毛猫</div>
+        </div>
+      </div>
+
+      <div class="hr-divider" style="left:340px"></div>
+
+      <div class="device-chip">
+        <div class="device-chip-icon">
+          <svg class="ic" width="20" height="20"><use href="#i-shirt"/></svg>
+        </div>
+        <div class="device-chip-text">
+          <div class="device-chip-title">智能宠物服饰</div>
+          <div class="device-chip-sub">已连接 · 6 个传感器在线</div>
+        </div>
+      </div>
+
+      <div class="live-pill">
+        <span class="dot pulse-dot"></span>
+        <span class="live-pill-text">3D 数字孪生 · 实时同步</span>
+        <span class="latency">42ms</span>
+      </div>
+
+      <div class="battery-pill">
+        <svg class="ic" width="18" height="18"><use href="#i-battery"/></svg>
+        <span class="num" id="headBattery">78%</span>
+      </div>
+
+      <svg class="ic wifi" width="19" height="19"><use href="#i-wifi"/></svg>
+
+      <div class="hr-divider" style="left:1665px"></div>
+
+      <div class="clock">
+        <div class="clock-date" id="clockDate">11月12日 周三</div>
+        <div class="clock-time num" id="clockTime">19:23</div>
+      </div>
+
+      <button class="icon-btn theme-btn" id="themeBtn" aria-label="切换明暗主题" aria-pressed="false" title="切换明暗主题 (T)">
+        <svg class="ic moon" width="20" height="20"><use href="#i-moon"/></svg>
+        <svg class="ic sun" width="20" height="20"><use href="#i-sun"/></svg>
+      </button>
+
+      <button class="icon-btn settings-btn" aria-label="设置" title="设置">
+        <svg class="ic" width="20" height="20"><use href="#i-settings"/></svg>
+      </button>
+    </header>
+    <!-- ================= left column ================= -->
+    <section class="card health-card">
+      <div class="card-head">
+        <svg class="ic" width="19" height="19" style="color:var(--coral)"><use href="#i-heart"/></svg>
+        <div class="card-title">健康状态</div>
+      </div>
+      <div class="live-chip"><span class="dot pulse-dot"></span><span>实时</span></div>
+
+      <div class="hrow hrow-1">
+        <div class="icon-badge t-orange"><svg class="ic" width="20" height="20"><use href="#i-thermo"/></svg></div>
+        <div class="label">体温</div>
+        <div class="value num" id="tempVal">38.1</div>
+        <div class="unit" style="left:128px">°C</div>
+        <div class="badge">正常</div>
+        <svg class="spark" viewBox="0 0 88 30"><path d="M0 23c9-3 12 1 20-5s14-8 24-1 16 9 26-3 12-3 18 2" stroke="var(--orange)"/></svg>
+      </div>
+
+      <div class="health-div health-div-1"></div>
+
+      <div class="hrow hrow-2">
+        <div class="icon-badge t-blue"><svg class="ic" width="20" height="20"><use href="#i-droplets"/></svg></div>
+        <div class="label">血氧</div>
+        <div class="value num" id="spo2Val">98</div>
+        <div class="unit" style="left:102px">%</div>
+        <div class="badge">正常</div>
+        <svg class="spark" viewBox="0 0 88 30"><path d="M0 18c8-6 14 4 22 2s12-8 22-2 14 8 24-2 12-4 20 4" stroke="var(--blue)"/></svg>
+      </div>
+
+      <div class="health-div health-div-2"></div>
+
+      <div class="hrow hrow-3">
+        <div class="icon-badge t-coral"><svg class="ic" width="20" height="20"><use href="#i-heart"/></svg></div>
+        <div class="label">心率</div>
+        <div class="value num" id="hrVal">72</div>
+        <div class="unit" style="left:102px">bpm</div>
+        <div class="badge">正常</div>
+        <svg class="spark" viewBox="0 0 88 30"><path d="M0 18c6 0 8-10 12-10s4 14 9 14 5-10 9-10 5 12 10 12 5-14 10-14 5 10 10 10 6-12 12-12 6 10 16 10" stroke="var(--coral)"/></svg>
+      </div>
+
+      <div class="health-note">全部指标在健康范围内</div>
+    </section>
+
+    <section class="card activity-card">
+      <div class="card-head">
+        <svg class="ic" width="19" height="19" style="color:var(--mint)"><use href="#i-footprints"/></svg>
+        <div class="card-title">运动数据</div>
+        <svg class="ic card-chev" width="18" height="18"><use href="#i-chevron"/></svg>
+      </div>
+
+      <div class="steps num" id="stepsVal">842</div>
+      <div class="steps-unit">步</div>
+      <div class="goal-label">今日目标 1,200 步</div>
+      <div class="goal-track"><div class="goal-fill"></div></div>
+
+      <div class="ring-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="54.6"/>
+          <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="54.6"
+                  stroke-dasharray="343" stroke-dashoffset="343" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="ring-value num" id="ringVal">68%</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric metric-1">
+          <svg class="ic" width="14" height="14" style="color:var(--mint)"><use href="#i-pin"/></svg>
+          <span class="val num">0.62</span><span class="u">km</span>
+        </div>
+        <div class="metric metric-2">
+          <svg class="ic" width="14" height="14" style="color:var(--orange)"><use href="#i-flame"/></svg>
+          <span class="val num">32</span><span class="u">kcal</span>
+        </div>
+        <div class="metric metric-3">
+          <svg class="ic" width="14" height="14" style="color:var(--blue)"><use href="#i-timer"/></svg>
+          <span class="val num">2h 10m</span>
+        </div>
+      </div>
+
+      <div class="chart-label">今日活动分布</div>
+      <div class="bars" id="activityBars"></div>
+      <div class="chart-note">15:00 — 18:00 最活跃</div>
+    </section>
+
+    <!-- ================= right column ================= -->
+    <section class="card sleep-card">
+      <div class="card-head">
+        <svg class="ic" width="19" height="19" style="color:var(--purple)"><use href="#i-moon"/></svg>
+        <div class="card-title">睡眠监测</div>
+        <svg class="ic card-chev" width="18" height="18"><use href="#i-chevron"/></svg>
+      </div>
+
+      <div class="sleep-h num">6</div>
+      <div class="sleep-h-unit">h</div>
+      <div class="sleep-m num">48</div>
+      <div class="sleep-m-unit">min</div>
+      <div class="sleep-sub">昨夜睡眠时长 · 卧床 7h 12m</div>
+
+      <div class="sleep-bars" id="sleepBars"></div>
+
+      <div class="legend legend-1"><span class="dot" style="background:var(--sleep-deep)"></span>深睡 42%</div>
+      <div class="legend legend-2"><span class="dot" style="background:var(--sleep-light)"></span>浅睡 45%</div>
+      <div class="legend legend-3"><span class="dot" style="background:var(--sleep-awake)"></span>清醒 13%</div>
+
+      <div class="insight">
+        <svg class="ic" width="14" height="14"><use href="#i-sparkles"/></svg>
+        <span>深睡占比高于 7 日均值 12%</span>
+      </div>
+    </section>
+
+    <section class="card live-card">
+      <div class="card-head">
+        <svg class="ic" width="19" height="19" style="color:var(--blue)"><use href="#i-video"/></svg>
+        <div class="card-title">实时监控</div>
+      </div>
+      <div class="live-badge" id="liveBadge"><span class="dot pulse-dot"></span><span id="liveBadgeText">直播中</span></div>
+
+      <div class="cam" id="cam">
+        <img src="design-assets/cat-cam-view3.png" alt="客厅摄像头画面">
+        <div class="cam-fade"></div>
+        <div class="cam-tag"><span class="dot"></span>客厅 · CAM 01</div>
+        <div class="cam-time" id="camTime">19:23:08</div>
+        <button class="play-btn" id="playBtn" aria-label="播放或暂停直播">
+          <svg class="ic ic-fill" id="playIcon" width="18" height="18"><use href="#i-play"/></svg>
+        </button>
+      </div>
+
+      <button class="replay-btn" id="replayBtn">
+        <svg class="ic" width="17" height="17"><use href="#i-history"/></svg>
+        <em id="replayText">回看监控</em>
+        <span class="sub" id="replaySub">最近 7 天</span>
+        <svg class="ic chev" width="17" height="17"><use href="#i-chevron"/></svg>
+      </button>
+    </section>
+
+    <section class="card device-card">
+      <div class="device-icon"><svg class="ic" width="21" height="21"><use href="#i-battery"/></svg></div>
+      <div class="device-label">设备电量</div>
+      <div class="device-value num" id="deviceVal">78%</div>
+      <div class="device-sub">预计可用 18 小时</div>
+      <div class="device-track"><div class="device-fill" id="deviceFill"></div></div>
+      <div class="device-badge">已连接</div>
+      <svg class="ic device-chev" width="18" height="18"><use href="#i-chevron"/></svg>
+    </section>
+    <!-- ================= center stage ================= -->
+    <div class="stage-glow"></div>
+    <div class="orbit"><div class="orbit-spin"><i></i></div></div>
+    <div class="ground-glow"></div>
+    <div class="ground-ring ring-outer"></div>
+    <div class="ground-ring ring-inner"></div>
+
+    <div class="cat" id="cat">
+      <div class="cat-gl" id="catGl"></div>
+    </div>
+
+    <div class="sensor-tag tag-imu">
+      <svg class="ic" width="14" height="14"><use href="#i-radio"/></svg>
+      <span>IMU · 60 Hz</span>
+    </div>
+
+    <div class="quote">
+      <svg class="ic ic-fill" width="18" height="18"><use href="#i-paw"/></svg>
+      <span class="quote-text">今天状态不错哦！步态平稳，继续加油</span>
+      <div class="voice" id="voiceBars"></div>
+    </div>
+    <!-- ================= dock & status ================= -->
+    <nav class="dock" aria-label="主导航">
+      <div class="nav-pill" id="navPill"></div>
+      <button class="nav active" data-i="0" data-name="首页" style="left:10px">
+        <svg class="ic"><use href="#i-house"/></svg><span>首页</span>
+      </button>
+      <button class="nav" data-i="1" data-name="健康" style="left:132px">
+        <svg class="ic"><use href="#i-heart"/></svg><span>健康</span>
+      </button>
+      <button class="nav" data-i="2" data-name="活动" style="left:254px">
+        <svg class="ic"><use href="#i-activity"/></svg><span>活动</span>
+      </button>
+      <button class="nav" data-i="3" data-name="设备" style="left:376px">
+        <svg class="ic"><use href="#i-cpu"/></svg><span>设备</span>
+      </button>
+      <button class="nav" data-i="4" data-name="更多" style="left:498px">
+        <svg class="ic"><use href="#i-dots"/></svg><span>更多</span>
+      </button>
+    </nav>
+
+    <div class="engine"><span class="dot pulse-dot"></span>PETA OS · 数字孪生引擎运行中</div>
+    <div class="sync" id="syncText">上次同步 19:23:08 · 数据延迟 42ms</div>
+
+    <div class="cam-debug" id="camDebug">
+      <div class="cam-debug-title">CAMERA · LIVE</div>
+      <div class="cam-debug-row"><span>pos</span><b id="camDebugPos">10.2130, -0.1952, 7.7884</b></div>
+      <div class="cam-debug-row"><span>tgt</span><b id="camDebugTgt">0.2582, -2.3589, 1.0077</b></div>
+      <button class="cam-copy" id="camCopy" type="button" aria-label="复制摄像头参数">复制</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const root = document.documentElement;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STILL = new URLSearchParams(location.search).has('still');
+
+  if (!['light', 'dark'].includes(root.dataset.theme)) root.dataset.theme = 'light';
+
+  /* ---------- stage scaling ---------- */
+  const fit = () => {
+    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    root.style.setProperty('--scale', String(Math.max(s, 0.2)));
+  };
+  fit();
+  window.addEventListener('resize', fit);
+
+  /* ---------- toast ---------- */
+  const toastEl = $('#toast');
+  let toastTimer;
+  const toast = (msg) => {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  };
+
+  /* ---------- theme ---------- */
+  const themeBtn = $('#themeBtn');
+  const syncThemeUI = () => {
+    const dark = root.dataset.theme === 'dark';
+    themeBtn.setAttribute('aria-pressed', String(dark));
+    themeBtn.title = dark ? '切换到明亮模式 (T)' : '切换到夜间模式 (T)';
+  };
+  let themeTimer;
+  function setTheme(theme, announce = true) {
+    if (theme === root.dataset.theme) return;
+    root.classList.add('theming');
+    root.dataset.theme = theme;
+    try { localStorage.setItem('peta-theme', theme); } catch (e) {}
+    syncThemeUI();
+    if (window.__petaSetSceneBg) window.__petaSetSceneBg(theme);
+    if (announce) toast(theme === 'dark' ? '已切换到夜间模式' : '已切换到明亮模式');
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(() => root.classList.remove('theming'), 760);
+  }
+  const toggleTheme = () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+  themeBtn.addEventListener('click', toggleTheme);
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      toggleTheme();
+    }
+  });
+  syncThemeUI();
+  if (window.__petaSetSceneBg) window.__petaSetSceneBg(root.dataset.theme);
+
+  /* ---------- charts ---------- */
+  const activityHeights = [12, 18, 15, 22, 30, 26, 34, 20, 16, 26, 38, 30, 22, 18, 25, 34, 45, 38, 30, 24, 28, 36, 42, 32, 22, 18, 26, 34, 30, 20];
+  const activityBars = $('#activityBars');
+  activityHeights.forEach((h, i) => {
+    const bar = document.createElement('span');
+    bar.className = 'bar';
+    bar.style.left = (i * 11.8) + 'px';
+    bar.style.height = h + 'px';
+    bar.style.opacity = (0.42 + (h / 45) * 0.5).toFixed(2);
+    activityBars.appendChild(bar);
+    if (!reduce && !STILL) {
+      bar.animate(
+        [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
+        { duration: 650, delay: 220 + i * 14, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'backwards' }
+      );
+    }
+  });
+
+  const sleepHeights = [54, 61, 57, 40, 36, 32, 25, 21, 31, 38, 58, 54, 61, 33, 40, 22, 18, 25, 35, 31, 62, 58, 30, 37, 57, 64, 36, 32, 25, 21];
+  const sleepStages = ['deep', 'deep', 'deep', 'light', 'light', 'light', 'awake', 'awake', 'light', 'light', 'deep', 'deep', 'deep', 'light', 'light', 'awake', 'awake', 'awake', 'light', 'light', 'deep', 'deep', 'light', 'light', 'deep', 'deep', 'light', 'light', 'awake', 'awake'];
+  const sleepBars = $('#sleepBars');
+  sleepHeights.forEach((h, i) => {
+    const bar = document.createElement('span');
+    bar.className = 'bar stage-' + sleepStages[i];
+    bar.style.left = (i * 11.8) + 'px';
+    bar.style.height = h + 'px';
+    sleepBars.appendChild(bar);
+    if (!reduce && !STILL) {
+      bar.animate(
+        [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
+        { duration: 700, delay: 300 + i * 14, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'backwards' }
+      );
+    }
+  });
+
+  const voiceHeights = [5, 10, 16, 9, 14, 6, 12, 17, 8, 11];
+  const voiceBars = $('#voiceBars');
+  voiceHeights.forEach((h, i) => {
+    const bar = document.createElement('i');
+    bar.style.setProperty('--h', h + 'px');
+    bar.style.setProperty('--o', (0.55 + i * 0.04).toFixed(2));
+    bar.style.setProperty('--i', String(i));
+    voiceBars.appendChild(bar);
+  });
+
+  /* ---------- number roll-in ---------- */
+  const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+  function animateNum(el, from, to, dur, fmt, delay = 0) {
+    if (!el) return;
+    if (reduce || STILL) { el.textContent = fmt(to); return; }
+    const start = performance.now() + delay;
+    function step(now) {
+      const p = Math.max(0, Math.min(1, (now - start) / dur));
+      el.textContent = fmt(from + (to - from) * easeOut(p));
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  if (STILL) {
+    animateNum($('#stepsVal'), 842, 842, 1300, (v) => String(Math.round(v)), 220);
+    animateNum($('#ringVal'), 68, 68, 1100, (v) => Math.round(v) + '%', 300);
+  } else {
+    animateNum($('#stepsVal'), 0, 842, 1300, (v) => String(Math.round(v)), 220);
+    animateNum($('#ringVal'), 0, 68, 1100, (v) => Math.round(v) + '%', 300);
+  }
+
+  const ring = $('#ringProgress');
+  const circ = 2 * Math.PI * 54.6;
+  const ringTarget = circ * (1 - 0.68);
+  const setRing = () => { ring.style.strokeDashoffset = reduce ? String(ringTarget) : String(ringTarget); };
+  if (STILL) { setRing(); } else { setTimeout(setRing, 420); }
+
+  /* ---------- clock ---------- */
+  const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateEl = $('#clockDate');
+  const timeEl = $('#clockTime');
+  const camTime = $('#camTime');
+  const syncEl = $('#syncText');
+  let lastSync = 0;
+  function tick() {
+    const d = new Date();
+    dateEl.textContent = `${d.getMonth() + 1}月${d.getDate()}日 ${WEEK[d.getDay()]}`;
+    const hh = pad(d.getHours());
+    const mm = pad(d.getMinutes());
+    const ss = pad(d.getSeconds());
+    timeEl.textContent = `${hh}:${mm}`;
+    camTime.textContent = `${hh}:${mm}:${ss}`;
+    if (Date.now() - lastSync > 8000) {
+      lastSync = Date.now();
+      syncEl.textContent = `上次同步 ${hh}:${mm}:${ss} · 数据延迟 42ms`;
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ---------- live monitor ---------- */
+  let playing = true;
+  const cam = $('#cam');
+  const camImg = $('.cam img', cam);
+  const playBtn = $('#playBtn');
+  const playIcon = $('#playIcon use');
+  const liveBadge = $('#liveBadge');
+  const liveBadgeText = $('#liveBadgeText');
+
+  function setPlaying(next, silent = false) {
+    playing = next;
+    playIcon.setAttribute('href', playing ? '#i-play' : '#i-pause');
+    camImg.style.animationPlayState = playing ? 'running' : 'paused';
+    liveBadgeText.textContent = playing ? '直播中' : '已暂停';
+    liveBadge.style.opacity = playing ? '1' : '.65';
+    playBtn.setAttribute('aria-label', playing ? '暂停直播' : '播放直播');
+    if (!silent) toast(playing ? '已恢复实时画面' : '已暂停实时画面');
+  }
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setPlaying(!playing);
+  });
+  cam.addEventListener('click', () => setPlaying(!playing));
+
+  let replaying = false;
+  const replayBtn = $('#replayBtn');
+  const replayText = $('#replayText');
+  const replaySub = $('#replaySub');
+  replayBtn.addEventListener('click', () => {
+    replaying = !replaying;
+    replayText.textContent = replaying ? '退出回看' : '回看监控';
+    replaySub.textContent = replaying ? '昨日 19:00 — 19:30' : '最近 7 天';
+    cam.classList.toggle('replaying', replaying);
+    if (replaying) setPlaying(false, true);
+    toast(replaying ? '正在回看昨日 19:00 — 19:30' : '已回到实时画面');
+  });
+
+  /* ---------- dock navigation ---------- */
+  const navs = $$('.nav');
+  const navPill = $('#navPill');
+  navs.forEach((nav) => {
+    nav.addEventListener('click', () => {
+      navs.forEach((n) => {
+        const on = n === nav;
+        n.classList.toggle('active', on);
+        if (on) n.setAttribute('aria-current', 'page');
+        else n.removeAttribute('aria-current');
+      });
+      navPill.style.left = (10 + Number(nav.dataset.i) * 122) + 'px';
+      toast(`已切换到「${nav.dataset.name}」`);
+    });
+  });
+
+  $('.settings-btn').addEventListener('click', () => toast('设置面板 · 演示版未启用'));
+
+  /* ---------- gentle live readings ---------- */
+  if (!reduce && !STILL) {
+    const tempEl = $('#tempVal');
+    const spo2El = $('#spo2Val');
+    const hrEl = $('#hrVal');
+    setInterval(() => {
+      tempEl.textContent = (38.1 + (Math.random() - 0.5) * 0.2).toFixed(1);
+      spo2El.textContent = String(97 + Math.round(Math.random() * 2));
+      hrEl.textContent = String(70 + Math.round(Math.random() * 6));
+    }, 6500);
+  }
+})();
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { buildRigData } from './rigify-app/js/rigdata.js';
+window.__petaBuildRigData = buildRigData;
+
+const mount = document.getElementById('cat');
+let scene, camera, renderer, controls, modelRoot = null;
+let rigData = null;
+const boneByName = new Map();
+const widgets = [];
+window.__petaWidgets = widgets;
+window.__petaRigData = () => rigData;
+window.__petaBoneCount = () => boneByName.size;
+
+function buildWidgets() {
+  if (!rigData) return;
+  for (const [name, rec] of rigData.bones) {
+    if (!rec.shape || !rigData.widgetGeoms[rec.shape]) continue;
+    const geo = rigData.widgetGeoms[rec.shape];
+    const anchorName = rec.shapeTransform || name;
+    const bone = boneByName.get(anchorName) || boneByName.get(name);
+    if (!bone) continue;
+    const holder = new THREE.Object3D();
+    const s = rec.shapeScale || [1, 1, 1];
+    const boneSize = rec.shapeBoneSize ? rec.length : 1;
+    const rot = rec.shapeRotation || [0, 0, 0];
+    const m = new THREE.Matrix4().compose(
+      new THREE.Vector3(...(rec.shapeTranslation || [0, 0, 0])),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rot[0], rot[1], rot[2])),
+      new THREE.Vector3(s[0] * boneSize, s[1] * boneSize, s[2] * boneSize),
+    );
+    holder.matrixAutoUpdate = false;
+    holder.matrix.copy(m);
+    const col = rec.colorCustom?.[0] || [0.68, 0.68, 0.68];
+    const pos = [];
+    for (const e of geo.edges) {
+      pos.push(geo.verts[e[0]].x, geo.verts[e[0]].y, geo.verts[e[0]].z,
+        geo.verts[e[1]].x, geo.verts[e[1]].y, geo.verts[e[1]].z);
+    }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    const line = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({
+      color: new THREE.Color(col[0], col[1], col[2]), transparent: true, opacity: 0.95,
+      depthTest: false,
+    }));
+    line.renderOrder = 10;
+    line.userData.widget = true;
+    holder.add(line);
+    if (geo.tris && geo.tris.length) {
+      const tp = [];
+      for (const t of geo.tris) { for (const vi of t) tp.push(geo.verts[vi].x, geo.verts[vi].y, geo.verts[vi].z); }
+      const tg = new THREE.BufferGeometry();
+      tg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tp), 3));
+      tg.computeVertexNormals();
+      const mesh = new THREE.Mesh(tg, new THREE.MeshBasicMaterial({
+        color: new THREE.Color(col[0], col[1], col[2]), transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, depthTest: false,
+      }));
+      mesh.renderOrder = 9;
+      mesh.userData.widget = true;
+      holder.add(mesh);
+    }
+    bone.add(holder);
+    widgets.push({ name, rec, bone, holder, line, edgeList: geo.edges, colorNormal: new THREE.Color(col[0], col[1], col[2]), colorHover: new THREE.Color(col[0] * 0.5 + 0.5, col[1] * 0.5 + 0.5, col[2] * 0.5 + 0.5), colorSelected: new THREE.Color(0xff8c19) });
+  }
+}
+
+function init3d() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(35, mount.clientWidth / Math.max(mount.clientHeight, 1), 0.05, 100);
+  camera.position.set(10.2130, -0.1952, 7.7884);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(mount.clientWidth, mount.clientHeight);
+  mount.querySelector('.cat-gl').appendChild(renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0.2582, -2.3589, 1.0077);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.15;
+  controls.autoRotate = false;
+  controls.autoRotateSpeed = 0.9;
+  controls.minDistance = 0;
+  controls.maxDistance = Infinity;
+
+  scene.add(new THREE.HemisphereLight(0xbfbfd8, 0x3a3a35, 1.2));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.7);
+  sun.position.set(2, 4, 2);
+  scene.add(sun);
+  const sun2 = new THREE.DirectionalLight(0x8899bb, 0.55);
+  sun2.position.set(-2, 1.5, -2);
+  scene.add(sun2);
+
+  const setBg = (t) => {
+    scene.background = null; // canvas 背景保持全透明，由舞台 ambient 渐变层承载
+  };
+  window.__petaSetSceneBg = setBg;
+  window.__petaScene = scene;
+  window.__petaControls = controls;
+  window.__petaModelRoot = () => modelRoot;
+  window.__petaDispose3d = () => {
+    if (!controls) return;
+    controls.dispose();
+    renderer.dispose();
+    mount.querySelector('.cat-gl').removeChild(renderer.domElement);
+  };
+
+  const loader = new GLTFLoader();
+  loader.load('rigify-app/data/cat.glb', (gltf) => {
+    modelRoot = gltf.scene;
+    modelRoot.visible = true;
+    scene.add(modelRoot);
+    const box = new THREE.Box3().setFromObject(modelRoot);
+    const size = box.getSize(new THREE.Vector3());
+    const s = 2.6 / Math.max(size.y, 1e-4);
+    modelRoot.scale.setScalar(s);
+    modelRoot.position.y = box.getCenter(new THREE.Vector3()).y - size.y * s + 0.32;
+    modelRoot.traverse((o) => {
+      if (o.name && o.name.startsWith('WGT')) o.visible = false; // widget 用 rig.json 几何重建
+    });
+    (async () => {
+      try {
+        const rigJson = await (await fetch('rigify-app/data/rig.json')).json();
+        rigData = buildRigData(rigJson);
+      } catch (e) { console.error('RIGERR', e); window.__petaRigErr = String(e); return; }
+      if (!rigData) return;
+      const sanitizeNodeName = (n) => n.replace(/\s/g, '_').replace(/[\[\].:\/]/g, '');
+      const nodeBySanitized = new Map();
+      modelRoot.traverse((o) => {
+        if (o.name) nodeBySanitized.set(o.name, o);
+        if (o.isBone) boneByName.set(o.name, o);
+      });
+      for (const name of rigData.bones.keys()) {
+        if (boneByName.has(name)) continue;
+        const node = nodeBySanitized.get(sanitizeNodeName(name));
+        if (node && node.isBone) {
+          boneByName.delete(node.name);
+          node.name = name;
+          boneByName.set(name, node);
+        }
+      }
+      buildWidgets();
+    })();
+  });
+
+  const ro = new ResizeObserver(() => {
+    const w = mount.clientWidth;
+    const h = mount.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+  });
+  ro.observe(mount);
+
+  const loop = () => {
+    requestAnimationFrame(loop);
+    controls.update();
+    const posEl = document.getElementById('camDebugPos');
+    const tgtEl = document.getElementById('camDebugTgt');
+    if (posEl) posEl.textContent = `${camera.position.x.toFixed(4)}, ${camera.position.y.toFixed(4)}, ${camera.position.z.toFixed(4)}`;
+    if (tgtEl) tgtEl.textContent = `${controls.target.x.toFixed(4)}, ${controls.target.y.toFixed(4)}, ${controls.target.z.toFixed(4)}`;
+    renderer.render(scene, camera);
+  };
+  const camCopy = document.getElementById('camCopy');
+  if (camCopy) {
+    camCopy.addEventListener('click', async () => {
+      const text = 'camera.position.set(' + camera.position.x.toFixed(4) + ', ' + camera.position.y.toFixed(4) + ', ' + camera.position.z.toFixed(4) + ');\ncontrols.target.set(' + controls.target.x.toFixed(4) + ', ' + controls.target.y.toFixed(4) + ', ' + controls.target.z.toFixed(4) + ');';
+      try { await navigator.clipboard.writeText(text); } catch (err) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+      camCopy.textContent = '已复制';
+      clearTimeout(camCopy._t);
+      camCopy._t = setTimeout(() => { camCopy.textContent = '复制'; }, 1500);
+    });
+  }
+  loop();
+}
+init3d();
+</script>
+</body>
+</html>

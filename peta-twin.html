@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mochi · PETA Twin — 宠物智能孪生</title>
-<link rel="icon" href="design-assets/cat-head.png">
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-head.png">
 <script>
   // Apply the saved theme before first paint to avoid a flash.
   try {
@@ -12,10 +12,10 @@
     document.documentElement.dataset.theme = (q === 'dark' || q === 'light') ? q : (localStorage.getItem('peta-theme') || 'light');
   } catch (e) {}
 </script>
-<link rel="preload" as="image" href="design-assets/cat-twin.png">
-<link rel="preload" as="image" href="design-assets/cat-twin-light.png">
-<link rel="preload" as="image" href="design-assets/cat-head.png">
-<link rel="preload" as="image" href="design-assets/cat-cam-view3.png">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-twin.png">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-twin-light.png">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-head.png">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-cam-view3.png">
 <script type="importmap">
 {
   "imports": {
@@ -241,7 +241,7 @@
   .avatar-wrap { position: relative; width: 54px; height: 54px; flex: none; }
   .avatar {
     width: 54px; height: 54px; border-radius: 50%;
-    background: url("design-assets/cat-head.png") center / cover no-repeat, #E9E5DA;
+    background: url("https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-head.png") center / cover no-repeat, #E9E5DA;
     box-shadow: 0 0 0 1px rgba(255, 255, 255, .75), 0 6px 14px rgba(11, 42, 36, .10);
   }
   html[data-theme="dark"] .avatar {
@@ -951,7 +951,7 @@
       <div class="live-badge" id="liveBadge"><span class="dot pulse-dot"></span><span id="liveBadgeText">直播中</span></div>
 
       <div class="cam" id="cam">
-        <img src="design-assets/cat-cam-view3.png" alt="客厅摄像头画面">
+        <img src="https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/design-assets/cat-cam-view3.png" alt="客厅摄像头画面">
         <div class="cam-fade"></div>
         <div class="cam-tag"><span class="dot"></span>客厅 · CAM 01</div>
         <div class="cam-time" id="camTime">19:23:08</div>
@@ -1257,7 +1257,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildRigData } from './rigify-app/js/rigdata.js';
+import { buildRigData } from 'https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/js/rigdata.js';
 window.__petaBuildRigData = buildRigData;
 
 const mount = document.getElementById('cat');
@@ -1361,7 +1361,7 @@ function init3d() {
   };
 
   const loader = new GLTFLoader();
-  loader.load('rigify-app/data/cat.glb', (gltf) => {
+  loader.load('https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/data/cat.glb', (gltf) => {
     modelRoot = gltf.scene;
     modelRoot.visible = true;
     scene.add(modelRoot);
@@ -1375,7 +1375,7 @@ function init3d() {
     });
     (async () => {
       try {
-        const rigJson = await (await fetch('rigify-app/data/rig.json')).json();
+        const rigJson = await (await fetch('https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/data/rig.json')).json();
         rigData = buildRigData(rigJson);
       } catch (e) { console.error('RIGERR', e); window.__petaRigErr = String(e); return; }
       if (!rigData) return;

@@ -87,6 +87,7 @@
     --play-bg: rgba(255, 255, 255, .92);
     --play-ink: #0B111B;
     --cam-ink: #FFFFFF;
+    --on-mint: #FFFFFF;
   }
 
   html[data-theme="dark"] {
@@ -143,6 +144,7 @@
     --play-bg: rgba(255, 255, 255, .92);
     --play-ink: #0B111B;
     --cam-ink: #FFFFFF;
+    --on-mint: #06251C;
   }
 
   * { box-sizing: border-box; }
@@ -525,6 +527,151 @@
   .device-badge { position: absolute; left: 286px; top: 28px; width: 60px; height: 20px; border-radius: 10px; background: var(--tint-green); display: grid; place-items: center; font-size: 9.5px; color: var(--green); line-height: 1; }
   .device-chev { position: absolute; left: 360px; top: 46px; color: var(--faint); }
 
+  /* ---- health page ---- */
+  .page { position: absolute; inset: 0; pointer-events: none; }
+  .page .card { pointer-events: auto; }
+  .stage[data-page="home"] .page-health { display: none; }
+  .stage[data-page="health"] .page-home { display: none; }
+
+  .ai-card { left: 48px; top: 132px; width: 396px; height: 352px; }
+  .ai-beta {
+    position: absolute; right: 22px; top: 20px; height: 22px; padding: 0 12px;
+    border-radius: 11px; background: var(--tint-mint); color: var(--live-ink);
+    font-size: 10.5px; font-weight: 600; line-height: 22px; letter-spacing: .1px;
+  }
+  .score-ring { position: absolute; left: 24px; top: 64px; width: 140px; height: 140px; }
+  .score-ring svg { display: block; overflow: visible; }
+  .score-track { fill: none; stroke: var(--orbit); stroke-width: 9.8; }
+  .score-progress {
+    fill: none; stroke: url(#scoreGrad); stroke-width: 9.8; stroke-linecap: round;
+    transition: stroke-dashoffset 1.3s var(--ease) .1s;
+  }
+  .score-num {
+    position: absolute; left: 0; top: 36px; width: 140px; text-align: center;
+    font-size: 42px; font-weight: 700; line-height: 1.05; letter-spacing: -1.5px;
+  }
+  .score-cap { position: absolute; left: 0; top: 88px; width: 140px; text-align: center; font-size: 11px; color: var(--sub); line-height: 1; }
+
+  .ai-subs { position: absolute; left: 180px; top: 66px; width: 194px; display: flex; flex-direction: column; gap: 12px; }
+  .ai-sub { position: relative; height: 26px; }
+  .ai-sub .l { position: absolute; left: 0; top: 1px; font-size: 11px; color: var(--sub); line-height: 1; }
+  .ai-sub .v { position: absolute; right: 0; top: 0; font-size: 11.5px; font-weight: 700; line-height: 1; }
+  .ai-sub .tr { position: absolute; left: 0; top: 20px; width: 100%; height: 6px; border-radius: 3px; background: var(--orbit); overflow: hidden; }
+  .ai-sub .fl { display: block; height: 100%; border-radius: 3px; transform-origin: 0 50%; }
+
+  .ai-note { position: absolute; left: 24px; top: 216px; font-size: 10.5px; color: var(--faint); line-height: 1; }
+  .ai-kpis { position: absolute; left: 24px; top: 242px; }
+  .ai-kpi { position: absolute; top: 0; white-space: nowrap; }
+  .ai-kpi.k2 { left: 176px; }
+  .ai-kpi .k { font-size: 10.5px; color: var(--faint); line-height: 1; }
+  .ai-kpi .v { margin-top: 7px; font-size: 14px; font-weight: 700; line-height: 1; }
+  .ai-cta {
+    position: absolute; left: 22px; top: 296px; width: 352px; height: 40px;
+    border-radius: 12px; background: var(--mint); color: var(--on-mint);
+    display: grid; place-items: center;
+    font-size: 13.5px; font-weight: 600; letter-spacing: .3px;
+    transition: transform .25s var(--ease), filter .25s var(--ease), box-shadow .25s var(--ease);
+    box-shadow: 0 8px 20px rgba(11, 159, 123, .22);
+  }
+  html[data-theme="dark"] .ai-cta { box-shadow: 0 8px 22px rgba(87, 230, 193, .16); }
+  .ai-cta:hover { transform: translateY(-2px); filter: brightness(1.06); }
+
+  .history-card { left: 48px; top: 504px; width: 396px; height: 376px; }
+  .hist-range { position: absolute; right: 22px; top: 20px; font-size: 11px; color: var(--faint); line-height: 1; }
+  .hist-bars { position: absolute; left: 28px; top: 78px; width: 341px; height: 112px; }
+  .hist-bars .hbar {
+    position: absolute; bottom: 0; width: 16px; border-radius: 4px;
+    background: var(--mint); opacity: .32; transform-origin: 50% 100%;
+  }
+  .hist-bars .hbar.last { opacity: 1; }
+  .hist-base { position: absolute; left: 28px; top: 191px; width: 341px; height: 1px; background: var(--hairline); }
+  .hist-days { position: absolute; left: 28px; top: 198px; width: 341px; height: 12px; font-size: 9px; color: var(--faint); line-height: 1; }
+  .hist-days span { position: absolute; top: 0; }
+  .hist-days .d1 { left: 0; }
+  .hist-days .d2 { left: 50%; transform: translateX(-50%); }
+  .hist-days .d3 { right: 0; }
+  .hist-div { position: absolute; left: 22px; top: 224px; width: 352px; height: 1px; background: var(--hairline); }
+  .rec { position: absolute; left: 22px; width: 352px; height: 22px; }
+  .rec .date { position: absolute; left: 0; top: 3px; width: 60px; font-size: 12px; color: var(--sub); line-height: 1; }
+  .rec .score { position: absolute; left: 74px; top: 2px; font-size: 13.5px; font-weight: 700; line-height: 1; }
+  .rec .tag {
+    position: absolute; left: 134px; top: 2px; width: 64px; height: 22px;
+    border-radius: 11px; display: grid; place-items: center;
+    font-size: 11px; font-weight: 600; line-height: 1;
+  }
+  .rec .tag.g { background: var(--tint-green); color: var(--green); }
+  .rec .tag.b { background: var(--tint-blue); color: var(--blue); }
+  .rec .delta { position: absolute; right: 0; top: 3px; width: 124px; text-align: right; font-size: 12px; font-weight: 600; line-height: 1; }
+  .rec .delta.up { color: var(--green); }
+  .rec .delta.down { color: var(--coral); }
+  .rec-sep { position: absolute; left: 0; top: 30px; width: 352px; height: 1px; background: var(--hairline); }
+
+  .posture-card { left: 1476px; top: 132px; width: 396px; height: 300px; }
+  .imu-chip {
+    position: absolute; right: 22px; top: 19px; height: 22px; padding: 0 10px;
+    border-radius: 11px; background: var(--tint-blue); color: var(--tag-ink-blue);
+    font-size: 10.5px; font-weight: 600; line-height: 22px; letter-spacing: .1px;
+  }
+  .pos-score { position: absolute; left: 22px; top: 54px; font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: -1.5px; }
+  .pos-cap { position: absolute; left: 24px; top: 104px; font-size: 11px; color: var(--sub); line-height: 1; }
+  .pos-delta { position: absolute; left: 24px; top: 124px; font-size: 11px; font-weight: 600; color: var(--green); line-height: 1; }
+  .pos-bars { position: absolute; left: 170px; top: 56px; width: 204px; display: flex; flex-direction: column; gap: 18px; }
+  .pos-note { position: absolute; left: 22px; top: 192px; font-size: 10.5px; color: var(--faint); line-height: 1; }
+  .pos-stats { position: absolute; left: 22px; top: 222px; display: flex; gap: 12px; }
+  .pos-stat { width: 170px; height: 54px; border-radius: 14px; background: var(--tint-mint); padding: 11px 14px; }
+  .pos-stat .k { font-size: 10.5px; color: var(--faint); line-height: 1; }
+  .pos-stat .v { margin-top: 8px; font-size: 16px; font-weight: 700; line-height: 1; }
+
+  .trend-card { left: 1476px; top: 450px; width: 396px; height: 300px; }
+  .trend-range { position: absolute; right: 22px; top: 20px; font-size: 11px; color: var(--faint); line-height: 1; }
+  .trend-chart { position: absolute; left: 22px; top: 56px; width: 352px; height: 110px; overflow: visible; }
+  .trend-chart .area { fill: url(#trendGrad); }
+  .trend-chart .line { fill: none; stroke: var(--mint); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .trend-chart .dot { fill: var(--mint); stroke: var(--panel); stroke-width: 2; }
+  .trend-end { position: absolute; left: 22px; top: 66px; width: 352px; text-align: right; font-size: 12px; font-weight: 700; color: var(--mint); line-height: 1; }
+  .trend-base { position: absolute; left: 22px; top: 168px; width: 352px; height: 1px; background: var(--hairline); }
+  .trend-dates { position: absolute; left: 22px; top: 176px; width: 352px; display: flex; justify-content: space-between; font-size: 9px; color: var(--faint); line-height: 1; }
+  .trend-div { position: absolute; left: 22px; top: 200px; width: 352px; height: 1px; background: var(--hairline); }
+  .trend-stats { position: absolute; left: 22px; top: 212px; display: flex; gap: 20px; }
+  .trend-stat { width: 104px; height: 64px; border-radius: 14px; background: var(--tint-mint); padding: 12px 14px; }
+  .trend-stat .k { font-size: 10.5px; color: var(--faint); line-height: 1; }
+  .trend-stat .v { margin-top: 7px; font-size: 18px; font-weight: 700; line-height: 1; }
+
+  .lastai-card { left: 1476px; top: 768px; width: 396px; height: 112px; }
+  .lastai-time { position: absolute; right: 22px; top: 25px; font-size: 11px; color: var(--faint); line-height: 1; }
+  .lastai-score { position: absolute; left: 22px; top: 50px; font-size: 24px; font-weight: 700; color: var(--mint); line-height: 1; letter-spacing: -.6px; }
+  .lastai-grade { position: absolute; left: 60px; top: 57px; font-size: 13px; font-weight: 600; line-height: 1; }
+  .lastai-link { position: absolute; right: 22px; top: 58px; font-size: 12px; font-weight: 600; color: var(--mint); line-height: 1; cursor: pointer; transition: transform .25s var(--ease); }
+  .lastai-card:hover .lastai-link { transform: translateX(-3px); }
+  .lastai-sub { position: absolute; left: 22px; top: 84px; font-size: 10.5px; color: var(--faint); line-height: 1; }
+
+  .ai-orbit {
+    position: absolute; left: 620px; top: 196px; width: 700px; height: 700px;
+    pointer-events: none; opacity: 0; transition: opacity .6s var(--ease);
+  }
+  .stage[data-page="health"] .ai-orbit { opacity: 1; }
+  .ai-orbit .arc {
+    fill: none; stroke: url(#arcGrad); stroke-width: 8.75; stroke-linecap: round;
+    transition: stroke-dashoffset 1.4s var(--ease) .2s;
+  }
+  .ai-orbit .arc-glow {
+    fill: none; stroke: var(--mint); stroke-width: 16; opacity: .3;
+    filter: blur(14px); transition: stroke-dashoffset 1.4s var(--ease) .2s;
+  }
+  .ai-badge {
+    position: absolute; left: 830px; top: 140px; width: 260px; height: 46px;
+    border-radius: 23px; background: var(--glass); border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 26px rgba(11, 42, 36, .14);
+    backdrop-filter: blur(20px) saturate(130%); -webkit-backdrop-filter: blur(20px) saturate(130%);
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    font-size: 13.5px; font-weight: 600; letter-spacing: .1px;
+    opacity: 0; transform: translateY(-8px); pointer-events: none;
+    transition: opacity .5s var(--ease) .15s, transform .5s var(--ease) .15s;
+  }
+  html[data-theme="dark"] .ai-badge { box-shadow: 0 12px 30px rgba(0, 0, 0, .44); }
+  .stage[data-page="health"] .ai-badge { opacity: 1; transform: none; pointer-events: auto; }
+  .ai-badge .ic { color: var(--mint); flex: none; }
+
   /* ---- center stage ---- */
   .stage-glow {
     position: absolute; left: 560px; top: 380px; width: 800px; height: 620px;
@@ -666,7 +813,7 @@
 </head>
 <body>
 <div class="viewport">
-  <div class="stage" id="stage">
+  <div class="stage" id="stage" data-page="home">
     <div class="fx fx-light"></div>
     <div class="fx fx-dark"></div>
     <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -723,6 +870,17 @@
         </symbol>
         <symbol id="i-sparkles" viewBox="0 0 24 24">
           <path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/>
+        </symbol>
+        <symbol id="i-trending" viewBox="0 0 24 24">
+          <path d="M16 7h6v6"/>
+          <path d="m22 7-8.5 8.5-5-5L2 17"/>
+        </symbol>
+        <symbol id="i-posture" viewBox="0 0 24 24">
+          <circle cx="16" cy="4" r="1"/>
+          <path d="m18 19 1-7-6 1"/>
+          <path d="m5 8 3-3 5.5 3-2.36 3.5"/>
+          <path d="M4.24 14.5a5 5 0 0 0 6.88 6"/>
+          <path d="M13.76 17.5a5 5 0 0 0-6.88-6"/>
         </symbol>
         <symbol id="i-radio" viewBox="0 0 24 24">
           <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
@@ -834,6 +992,8 @@
         <svg class="ic" width="20" height="20"><use href="#i-settings"/></svg>
       </button>
     </header>
+    <!-- ================= home page ================= -->
+    <div class="page page-home">
     <!-- ================= left column ================= -->
     <section class="card health-card">
       <div class="card-head">
@@ -977,6 +1137,147 @@
       <div class="device-badge">已连接</div>
       <svg class="ic device-chev" width="18" height="18"><use href="#i-chevron"/></svg>
     </section>
+    </div><!-- /page-home -->
+
+    <!-- ================= health page ================= -->
+    <div class="page page-health">
+      <section class="card ai-card">
+        <div class="card-head">
+          <svg class="ic" width="19" height="19" style="color:var(--mint)"><use href="#i-sparkles"/></svg>
+          <div class="card-title">AI 健康体检</div>
+        </div>
+        <span class="ai-beta">深度分析</span>
+
+        <div class="score-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <defs>
+              <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" style="stop-color:var(--mint)"/>
+                <stop offset="1" style="stop-color:var(--blue)"/>
+              </linearGradient>
+            </defs>
+            <circle class="score-track" cx="70" cy="70" r="65.1"/>
+            <circle class="score-progress" id="scoreArc" cx="70" cy="70" r="65.1"
+                    stroke-dasharray="409.1" stroke-dashoffset="409.1" transform="rotate(-90 70 70)"/>
+          </svg>
+          <div class="score-num num">92</div>
+          <div class="score-cap">综合评分</div>
+        </div>
+
+        <div class="ai-subs">
+          <div class="ai-sub"><span class="l">生理指标</span><b class="v num">94</b><div class="tr"><i class="fl" style="width:94%;background:var(--mint)"></i></div></div>
+          <div class="ai-sub"><span class="l">姿态评估</span><b class="v num">88</b><div class="tr"><i class="fl" style="width:88%;background:var(--blue)"></i></div></div>
+          <div class="ai-sub"><span class="l">活跃程度</span><b class="v num">91</b><div class="tr"><i class="fl" style="width:91%;background:var(--orange)"></i></div></div>
+          <div class="ai-sub"><span class="l">睡眠质量</span><b class="v num">93</b><div class="tr"><i class="fl" style="width:93%;background:var(--purple)"></i></div></div>
+        </div>
+
+        <div class="ai-note">基于 30 天历史数据 + IMU 姿态数据分析</div>
+        <div class="ai-kpis">
+          <div class="ai-kpi k1"><div class="k">上次体检</div><div class="v num">89 分</div></div>
+          <div class="ai-kpi k2"><div class="k">数据完整度</div><div class="v num">98%</div></div>
+        </div>
+
+        <button class="ai-cta" id="aiCta">开始 AI 深度体检</button>
+      </section>
+
+      <section class="card history-card">
+        <div class="card-head">
+          <svg class="ic" width="19" height="19" style="color:var(--blue)"><use href="#i-history"/></svg>
+          <div class="card-title">历史健康记录</div>
+        </div>
+        <span class="hist-range">近 14 天</span>
+
+        <div class="hist-bars" id="histBars"></div>
+        <div class="hist-base"></div>
+        <div class="hist-days"><span class="d1 num">10/30</span><span class="d2 num">11/07</span><span class="d3 num">11/14</span></div>
+        <div class="hist-div"></div>
+
+        <div class="rec" style="top:238px">
+          <span class="date num">11/14</span><span class="score num">92</span>
+          <span class="tag g">优秀</span><span class="delta up num">↑ 3</span>
+          <div class="rec-sep"></div>
+        </div>
+        <div class="rec" style="top:274px">
+          <span class="date num">11/13</span><span class="score num">89</span>
+          <span class="tag b">良好</span><span class="delta down num">↓ 1</span>
+          <div class="rec-sep"></div>
+        </div>
+        <div class="rec" style="top:310px">
+          <span class="date num">11/12</span><span class="score num">91</span>
+          <span class="tag g">优秀</span><span class="delta up num">↑ 2</span>
+          <div class="rec-sep"></div>
+        </div>
+        <div class="rec" style="top:346px">
+          <span class="date num">11/11</span><span class="score num">90</span>
+          <span class="tag g">优秀</span><span class="delta up num">↑ 1</span>
+        </div>
+      </section>
+
+      <section class="card posture-card">
+        <div class="card-head">
+          <svg class="ic" width="19" height="19" style="color:var(--blue)"><use href="#i-posture"/></svg>
+          <div class="card-title">姿态评估</div>
+        </div>
+        <span class="imu-chip">IMU 实时</span>
+
+        <div class="pos-score num">88</div>
+        <div class="pos-cap">综合姿态得分</div>
+        <div class="pos-delta">↑ 2 较上周</div>
+
+        <div class="pos-bars">
+          <div class="ai-sub"><span class="l">脊柱角度</span><b class="v num">90</b><div class="tr"><i class="fl" style="width:90%;background:var(--mint)"></i></div></div>
+          <div class="ai-sub"><span class="l">四肢对称</span><b class="v num">86</b><div class="tr"><i class="fl" style="width:86%;background:var(--blue)"></i></div></div>
+          <div class="ai-sub"><span class="l">重心稳定</span><b class="v num">88</b><div class="tr"><i class="fl" style="width:88%;background:var(--purple)"></i></div></div>
+        </div>
+
+        <div class="pos-note">基于 IMU 50Hz 实时姿态采样</div>
+        <div class="pos-stats">
+          <div class="pos-stat"><div class="k">今日异常姿态</div><div class="v num">2 次</div></div>
+          <div class="pos-stat"><div class="k">久坐提醒</div><div class="v num">0 次</div></div>
+        </div>
+      </section>
+
+      <section class="card trend-card">
+        <div class="card-head">
+          <svg class="ic" width="19" height="19" style="color:var(--mint)"><use href="#i-trending"/></svg>
+          <div class="card-title">健康趋势</div>
+        </div>
+        <span class="trend-range">近 30 天</span>
+
+        <svg class="trend-chart" width="352" height="110" viewBox="0 0 352 110">
+          <defs>
+            <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style="stop-color:var(--mint);stop-opacity:.22"/>
+              <stop offset="1" style="stop-color:var(--mint);stop-opacity:0"/>
+            </linearGradient>
+          </defs>
+          <path class="area" id="trendArea" d=""/>
+          <path class="line" id="trendLine" d=""/>
+          <circle class="dot" id="trendDot" cx="352" cy="37" r="4.5"/>
+        </svg>
+        <div class="trend-end num">92</div>
+        <div class="trend-base"></div>
+        <div class="trend-dates"><span class="num">10/16</span><span class="num">11/14</span></div>
+        <div class="trend-div"></div>
+        <div class="trend-stats">
+          <div class="trend-stat"><div class="k">平均分</div><div class="v num">90</div></div>
+          <div class="trend-stat"><div class="k">最高分</div><div class="v num">94</div></div>
+          <div class="trend-stat"><div class="k">最低分</div><div class="v num">84</div></div>
+        </div>
+      </section>
+
+      <section class="card lastai-card">
+        <div class="card-head">
+          <svg class="ic" width="18" height="18" style="color:var(--mint)"><use href="#i-sparkles"/></svg>
+          <div class="card-title" style="font-size:14px">最近 AI 体检</div>
+        </div>
+        <span class="lastai-time num">今天 08:30</span>
+        <div class="lastai-score num">92</div>
+        <div class="lastai-grade">分 · 优秀</div>
+        <span class="lastai-link">查看完整报告 →</span>
+        <div class="lastai-sub">综合历史数据 + 姿态数据由 AI 生成</div>
+      </section>
+    </div><!-- /page-health -->
     <!-- ================= center stage ================= -->
     <div class="stage-glow"></div>
     <div class="orbit"><div class="orbit-spin"><i></i></div></div>
@@ -986,6 +1287,24 @@
 
     <div class="cat" id="cat">
       <div class="cat-gl" id="catGl"></div>
+    </div>
+
+    <svg class="ai-orbit" width="700" height="700" viewBox="0 0 700 700" aria-hidden="true">
+      <defs>
+        <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style="stop-color:var(--mint)"/>
+          <stop offset="1" style="stop-color:var(--blue)"/>
+        </linearGradient>
+      </defs>
+      <circle class="arc-glow" id="arcGlow" cx="350" cy="350" r="345.6"
+              stroke-dasharray="2171.5" stroke-dashoffset="2171.5" transform="rotate(-90 350 350)"/>
+      <circle class="arc" id="aiArc" cx="350" cy="350" r="345.6"
+              stroke-dasharray="2171.5" stroke-dashoffset="2171.5" transform="rotate(-90 350 350)"/>
+    </svg>
+
+    <div class="ai-badge">
+      <svg class="ic" width="18" height="18"><use href="#i-sparkles"/></svg>
+      <span>AI 健康体检 · 92 分</span>
     </div>
 
     <div class="sensor-tag tag-imu">
@@ -1134,6 +1453,25 @@
     voiceBars.appendChild(bar);
   });
 
+  /* ---------- health page charts ---------- */
+  const histVals = [86, 88, 85, 90, 91, 89, 92, 90, 93, 91, 94, 92, 93, 92];
+  const histBars = $('#histBars');
+  histVals.forEach((v, i) => {
+    const bar = document.createElement('span');
+    bar.className = 'hbar' + (i === histVals.length - 1 ? ' last' : '');
+    bar.style.left = (i * 25) + 'px';
+    bar.style.height = ((v - 80) * 8) + 'px';
+    histBars.appendChild(bar);
+  });
+
+  const trendScores = [86, 85, 87, 86, 88, 87, 89, 88, 87, 89, 90, 89, 91, 90, 88, 89, 90, 91, 90, 92, 91, 90, 92, 93, 92, 91, 93, 92, 94, 92];
+  const tx = (i) => (i * 352 / 29).toFixed(1);
+  const ty = (v) => (104 - ((v - 82) / 14) * 94).toFixed(1);
+  const trendLine = trendScores.map((v, i) => (i ? 'L' : 'M') + tx(i) + ',' + ty(v)).join(' ');
+  $('#trendLine').setAttribute('d', trendLine);
+  $('#trendArea').setAttribute('d', trendLine + ' L352,110 L0,110 Z');
+  $('#trendDot').setAttribute('cy', ty(92));
+
   /* ---------- number roll-in ---------- */
   const easeOut = (p) => 1 - Math.pow(1 - p, 3);
   function animateNum(el, from, to, dur, fmt, delay = 0) {
@@ -1223,6 +1561,51 @@
   });
 
   /* ---------- dock navigation ---------- */
+  const stage = $('#stage');
+  const quoteTextEl = $('.quote-text');
+  const QUOTES = {
+    home: '今天状态不错哦！步态平稳，继续加油',
+    health: 'AI 体检建议：姿态与生理指标优秀，建议保持每日活动量',
+  };
+  const SCORE_C = 409.1;
+  const ARC_C = 2171.5;
+  let curPage = 'home';
+
+  function animateHealth() {
+    const rings = [
+      [$('#scoreArc'), SCORE_C, SCORE_C * 0.08],
+      [$('#aiArc'), ARC_C, ARC_C * 0.08],
+      [$('#arcGlow'), ARC_C, ARC_C * 0.08],
+    ];
+    rings.forEach(([el, c, t]) => {
+      if (!el) return;
+      el.style.strokeDashoffset = String(c);
+      if (reduce || STILL) { el.style.strokeDashoffset = String(t); return; }
+      setTimeout(() => { el.style.strokeDashoffset = String(t); }, 60);
+    });
+    if (reduce || STILL) return;
+    $$('.page-health .fl').forEach((el, i) => {
+      el.animate(
+        [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+        { duration: 650, delay: 260 + i * 70, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'backwards' }
+      );
+    });
+    $$('#histBars .hbar').forEach((el, i) => {
+      el.animate(
+        [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
+        { duration: 600, delay: 240 + i * 30, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'backwards' }
+      );
+    });
+  }
+
+  function setPage(p) {
+    if (p === curPage) return;
+    curPage = p;
+    stage.dataset.page = p;
+    quoteTextEl.textContent = QUOTES[p];
+    if (p === 'health') animateHealth();
+  }
+
   const navs = $$('.nav');
   const navPill = $('#navPill');
   navs.forEach((nav) => {
@@ -1234,9 +1617,20 @@
         else n.removeAttribute('aria-current');
       });
       navPill.style.left = (10 + Number(nav.dataset.i) * 122) + 'px';
-      toast(`已切换到「${nav.dataset.name}」`);
+      const i = nav.dataset.i;
+      if (i === '0' || i === '1') {
+        setPage(i === '1' ? 'health' : 'home');
+        toast(`已切换到「${nav.dataset.name}」`);
+      } else {
+        toast(`「${nav.dataset.name}」页面 · 演示版未启用`);
+      }
     });
   });
+
+  $('#aiCta').addEventListener('click', () => toast('AI 深度体检进行中 · 演示版未启用'));
+  $('.lastai-link').addEventListener('click', () => toast('完整体检报告 · 演示版未启用'));
+
+  if (new URLSearchParams(location.search).get('page') === 'health') navs[1].click();
 
   $('.settings-btn').addEventListener('click', () => toast('设置面板 · 演示版未启用'));
 

@@ -36,7 +36,7 @@
   html[data-theme="light"] {
     color-scheme: light;
     --bg: #F2F7F4;
-    --panel: rgba(255, 255, 255, .91);
+    --panel: rgba(255, 255, 255, .58);
     --panel-border: rgba(12, 42, 36, .075);
     --panel-shadow: 0 16px 40px rgba(10, 55, 44, .10);
     --panel-shadow-hover: 0 24px 54px rgba(10, 55, 44, .16);
@@ -62,10 +62,10 @@
     --track: rgba(12, 42, 36, .07);
     --hairline: rgba(12, 42, 36, .055);
     --divider: rgba(12, 42, 36, .07);
-    --glass: rgba(255, 255, 255, .72);
+    --glass: rgba(255, 255, 255, .62);
     --glass-hover: rgba(255, 255, 255, .92);
     --glass-border: rgba(12, 42, 36, .07);
-    --dock: rgba(255, 255, 255, .92);
+    --dock: rgba(255, 255, 255, .62);
     --tag-bg: rgba(255, 255, 255, .90);
     --tag-border-mint: rgba(11, 159, 123, .22);
     --tag-border-blue: rgba(47, 127, 220, .22);
@@ -93,7 +93,7 @@
   html[data-theme="dark"] {
     color-scheme: dark;
     --bg: #070A11;
-    --panel: rgba(15, 24, 36, .90);
+    --panel: rgba(15, 24, 36, .58);
     --panel-border: rgba(255, 255, 255, .075);
     --panel-shadow: 0 18px 46px rgba(0, 0, 0, .42);
     --panel-shadow-hover: 0 26px 60px rgba(0, 0, 0, .54);
@@ -119,10 +119,10 @@
     --track: rgba(255, 255, 255, .06);
     --hairline: rgba(255, 255, 255, .055);
     --divider: rgba(255, 255, 255, .075);
-    --glass: rgba(14, 25, 38, .80);
+    --glass: rgba(14, 25, 38, .62);
     --glass-hover: rgba(22, 36, 52, .92);
     --glass-border: rgba(255, 255, 255, .07);
-    --dock: rgba(12, 21, 34, .90);
+    --dock: rgba(12, 21, 34, .62);
     --tag-bg: rgba(11, 20, 32, .82);
     --tag-border-mint: rgba(87, 230, 193, .20);
     --tag-border-blue: rgba(92, 184, 255, .20);
@@ -222,6 +222,16 @@
   html[data-theme="dark"] .fx-light { opacity: 0; }
   html[data-theme="dark"] .fx-dark { opacity: 1; }
 
+  /* ============ full-screen 3D grass background ============ */
+  .bg-gl {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: filter .55s var(--ease);
+  }
+  .bg-gl canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  html[data-theme="dark"] .bg-gl { filter: brightness(.42) saturate(.8); }
+
   /* ============ shared bits ============ */
   .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; letter-spacing: -.5px; }
   .ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -238,7 +248,14 @@
   }
 
   /* ============ header ============ */
-  .topbar { position: absolute; inset: 0 0 auto 0; height: 112px; z-index: 20; }
+  .topbar {
+    position: absolute; inset: 0 0 auto 0; height: 112px; z-index: 20;
+    background: linear-gradient(180deg, var(--glass) 0%, var(--glass) 42%, transparent 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
+  }
   .brand { position: absolute; left: 48px; top: 34px; display: flex; align-items: center; gap: 14px; }
   .avatar-wrap { position: relative; width: 54px; height: 54px; flex: none; }
   .avatar {
@@ -341,8 +358,8 @@
     background: var(--panel);
     border: 1px solid var(--panel-border);
     box-shadow: var(--panel-shadow);
-    backdrop-filter: blur(24px) saturate(125%);
-    -webkit-backdrop-filter: blur(24px) saturate(125%);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
     transition: box-shadow .35s var(--ease), transform .35s var(--ease);
   }
   .card:hover { transform: translateY(-3px); box-shadow: var(--panel-shadow-hover); }
@@ -645,19 +662,6 @@
   .lastai-card:hover .lastai-link { transform: translateX(-3px); }
   .lastai-sub { position: absolute; left: 22px; top: 84px; font-size: 10.5px; color: var(--faint); line-height: 1; }
 
-  .ai-orbit {
-    position: absolute; left: 620px; top: 196px; width: 700px; height: 700px;
-    pointer-events: none; opacity: 0; transition: opacity .6s var(--ease);
-  }
-  .stage[data-page="health"] .ai-orbit { opacity: 1; }
-  .ai-orbit .arc {
-    fill: none; stroke: url(#arcGrad); stroke-width: 8.75; stroke-linecap: round;
-    transition: stroke-dashoffset 1.4s var(--ease) .2s;
-  }
-  .ai-orbit .arc-glow {
-    fill: none; stroke: var(--mint); stroke-width: 16; opacity: .3;
-    filter: blur(14px); transition: stroke-dashoffset 1.4s var(--ease) .2s;
-  }
   .ai-badge {
     position: absolute; left: 830px; top: 140px; width: 260px; height: 46px;
     border-radius: 23px; background: var(--glass); border: 1px solid var(--glass-border);
@@ -753,9 +757,20 @@
   .nav.active { color: var(--mint); }
   .nav.active span { font-weight: 600; }
 
-  .engine { position: absolute; left: 48px; top: 995px; display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+  .engine {
+    position: absolute; left: 40px; top: 987px; display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: var(--faint); letter-spacing: .1px;
+    padding: 8px 15px; border-radius: 15px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
   .engine .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); }
-  .sync { position: absolute; left: 1476px; top: 995px; font-size: 10px; color: var(--faint); letter-spacing: .1px; }
+  .sync {
+    position: absolute; left: 1430px; top: 987px; font-size: 10px; color: var(--faint); letter-spacing: .1px;
+    padding: 8px 15px; border-radius: 15px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
 
   .cam-debug {
     position: absolute; top: 980px; right: 24px; width: 320px;
@@ -816,6 +831,7 @@
   <div class="stage" id="stage" data-page="home">
     <div class="fx fx-light"></div>
     <div class="fx fx-dark"></div>
+    <div class="bg-gl" id="bgGl" aria-hidden="true"></div>
     <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
       <defs>
         <symbol id="i-heart" viewBox="0 0 24 24">
@@ -1289,19 +1305,6 @@
       <div class="cat-gl" id="catGl"></div>
     </div>
 
-    <svg class="ai-orbit" width="700" height="700" viewBox="0 0 700 700" aria-hidden="true">
-      <defs>
-        <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style="stop-color:var(--mint)"/>
-          <stop offset="1" style="stop-color:var(--blue)"/>
-        </linearGradient>
-      </defs>
-      <circle class="arc-glow" id="arcGlow" cx="350" cy="350" r="345.6"
-              stroke-dasharray="2171.5" stroke-dashoffset="2171.5" transform="rotate(-90 350 350)"/>
-      <circle class="arc" id="aiArc" cx="350" cy="350" r="345.6"
-              stroke-dasharray="2171.5" stroke-dashoffset="2171.5" transform="rotate(-90 350 350)"/>
-    </svg>
-
     <div class="ai-badge">
       <svg class="ic" width="18" height="18"><use href="#i-sparkles"/></svg>
       <span>AI 健康体检 · 92 分</span>
@@ -1568,14 +1571,11 @@
     health: 'AI 体检建议：姿态与生理指标优秀，建议保持每日活动量',
   };
   const SCORE_C = 409.1;
-  const ARC_C = 2171.5;
   let curPage = 'home';
 
   function animateHealth() {
     const rings = [
       [$('#scoreArc'), SCORE_C, SCORE_C * 0.08],
-      [$('#aiArc'), ARC_C, ARC_C * 0.08],
-      [$('#arcGlow'), ARC_C, ARC_C * 0.08],
     ];
     rings.forEach(([el, c, t]) => {
       if (!el) return;
@@ -1651,6 +1651,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { buildRigData } from 'https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/js/rigdata.js';
 window.__petaBuildRigData = buildRigData;
 
@@ -1822,6 +1823,74 @@ function init3d() {
   }
   loop();
 }
+/* ---------- full-screen grass background ---------- */
+function initGrassBg() {
+  const BG_W = 1920, BG_H = 1080;
+  const mountBg = document.getElementById('bgGl');
+  if (!mountBg) return;
+
+  const bgScene = new THREE.Scene();
+  const bgCamera = new THREE.PerspectiveCamera(45, BG_W / BG_H, 0.1, 600);
+  const bgRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  bgRenderer.setSize(BG_W, BG_H);
+  mountBg.appendChild(bgRenderer.domElement);
+  window.__petaBgScene = bgScene;
+
+  bgScene.add(new THREE.HemisphereLight(0xeaf7ee, 0x40603a, 1.25));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  sun.position.set(30, 60, 35);
+  bgScene.add(sun);
+  const fill = new THREE.DirectionalLight(0xa8d8c0, 0.55);
+  fill.position.set(-25, 20, -30);
+  bgScene.add(fill);
+
+  const draco = new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
+  const loader = new GLTFLoader();
+  loader.setDRACOLoader(draco);
+  loader.load('https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/data/grass.glb', (gltf) => {
+    const grass = gltf.scene;
+    let box = new THREE.Box3().setFromObject(grass);
+    let size = box.getSize(new THREE.Vector3());
+    // 模型若为 Z-up（最薄轴朝 Z）则转为 Y-up
+    if (size.z < Math.min(size.x, size.y) * 0.35) {
+      grass.rotation.x = -Math.PI / 2;
+      grass.updateMatrixWorld(true);
+      box = new THREE.Box3().setFromObject(grass);
+      size = box.getSize(new THREE.Vector3());
+    }
+    // 水平居中、地面贴 y=0
+    const center = box.getCenter(new THREE.Vector3());
+    grass.position.x -= center.x;
+    grass.position.z -= center.z;
+    grass.position.y -= box.min.y;
+    grass.updateMatrixWorld(true);
+    bgScene.add(grass);
+
+    const halfW = Math.min(size.x, size.z) / 2;
+    // 斜俯视取景：受水平视野约束确定最远落点，让草地恰好铺满 1920×1080
+    const vHalf = THREE.MathUtils.degToRad(45 / 2);                       // 垂直半视角 22.5°
+    const hHalf = Math.atan(Math.tan(vHalf) * (BG_W / BG_H));             // 水平半视角
+    const pitch = THREE.MathUtils.degToRad(62);                           // 中心俯角
+    const dFar = halfW * 0.93 / Math.tan(hHalf);                          // 顶边落点：留余量保证四角在草地内
+    const camY = dFar * Math.tan(pitch - vHalf);                          // 顶边视线恰好压在远边缘
+    const camZ = dFar - halfW;
+    bgCamera.position.set(0, camY, camZ);
+    bgCamera.lookAt(0, 0, camZ - camY / Math.tan(pitch));
+    grassLoaded = true;
+    window.__petaGrassInfo = { size: size.toArray(), camY, camZ };
+  }, undefined, (e) => { console.error('GRASSERR', e); });
+
+  let grassLoaded = false;
+  const loopBg = () => {
+    requestAnimationFrame(loopBg);
+    if (!grassLoaded) return;
+    bgRenderer.render(bgScene, bgCamera);
+  };
+  loopBg();
+}
+initGrassBg();
 init3d();
 </script>
 </body>

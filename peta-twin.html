@@ -345,6 +345,31 @@
   .ws-pill[data-ws="closed"] .dot { background: var(--coral); color: var(--coral); }
   .ws-pill[data-ws="closed"] .ws-status { background: var(--tint-coral); color: var(--coral); }
 
+  /* 主动接入按钮（点击才连接 WebSocket，无需确认弹窗） */
+  .ws-connect {
+    position: absolute; left: 1352px; top: 44px; height: 38px; padding: 0 15px;
+    display: flex; align-items: center; gap: 7px;
+    border: 0; border-radius: 19px; cursor: pointer;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .1px; white-space: nowrap;
+    background: var(--mint); color: var(--on-mint);
+    box-shadow: 0 8px 20px rgba(11, 159, 123, .22);
+    transition: transform .25s var(--ease), filter .25s var(--ease),
+                background .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  html[data-theme="dark"] .ws-connect { box-shadow: 0 8px 22px rgba(87, 230, 193, .16); }
+  .ws-connect:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .ws-connect:active { transform: translateY(0); }
+  .ws-connect .ic { flex: none; }
+  .ws-connect[data-act="on"] {
+    background: var(--tint-coral); color: var(--coral); box-shadow: none; filter: none;
+  }
+  .ws-connect[data-act="on"]:hover { background: var(--tint-coral); filter: brightness(1.08); }
+  .ws-connect[data-act="cancel"] {
+    background: var(--track); color: var(--sub); box-shadow: none; filter: none;
+  }
+  .ws-connect[data-act="cancel"]:hover { filter: brightness(1.04); }
+  .ws-connect:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+
   .battery-pill {
     position: absolute; left: 1510px; top: 44px;
     width: 94px; height: 38px; padding: 0 10px;
@@ -1256,6 +1281,9 @@
         <symbol id="i-pen" viewBox="0 0 24 24">
           <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
         </symbol>
+        <symbol id="i-zap" viewBox="0 0 24 24">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+        </symbol>
       </defs>
     </svg>
     <header class="topbar">
@@ -1288,11 +1316,16 @@
         <span class="latency">42ms</span>
       </div>
 
-      <div class="ws-pill" id="wsPill" data-ws="connecting" title="WebSocket 关节数据链路 · 端口 2001">
+      <div class="ws-pill" id="wsPill" data-ws="idle" title="WebSocket 关节数据链路 · 端口 2001">
         <span class="dot pulse-dot"></span>
         <span class="ws-text">WebSocket 链路</span>
-        <span class="ws-status" id="wsStatus">接入中</span>
+        <span class="ws-status" id="wsStatus">未接入</span>
       </div>
+
+      <button class="ws-connect" id="wsConnectBtn" data-act="off" title="点击后主动接入 WebSocket 实时数据（无需确认）">
+        <svg class="ic" width="15" height="15"><use href="#i-zap"/></svg>
+        <span id="wsConnectTxt">接入实时数据</span>
+      </button>
 
       <div class="battery-pill">
         <svg class="ic" width="18" height="18"><use href="#i-battery"/></svg>
@@ -2645,7 +2678,8 @@ initGrassBg();
 init3d();
 
 /* ---------- WebSocket 实时关节驱动（参考 index_websocket.html / main.js） ----------
- * 连接 __WS_URL（默认 ws://hostname:2001），收到 state / state_multi / snapshot 消息后
+ * 默认不连接、模型保持默认姿态；点击顶栏「接入实时数据」按钮才连接 __WS_URL
+ * （默认 ws://hostname:2001），收到 state / state_multi / snapshot 消息后
  * 用关节四元数驱动骨骼（basis 空间 = rest ∘ q，含欧拉角关节限位；world 空间 = inv(parent.rest) ∘ q）。 */
 const WS_DEFAULT_LIMITS = {
   'torso': { x: [-40, 40], y: [-25, 25], z: [-20, 20] },
@@ -2663,9 +2697,29 @@ let wsJointLimits = loadJointLimits();
 
 const wsPill = document.getElementById('wsPill');
 const wsStatusEl = document.getElementById('wsStatus');
+const wsBtn = document.getElementById('wsConnectBtn');
+const wsBtnTxt = document.getElementById('wsConnectTxt');
+const WS_ENABLED = !!window.__WS_ENABLED;
+const WS_URL = window.__WS_URL || ('ws://' + location.hostname + ':2001');
+let ws = null;                // 当前 Socket
+let wsUserEnabled = false;    // 用户是否处于「接入中 / 已接入」状态
+let wsRetryTimer = 0;
+
+/* 按钮三态：off=接入实时数据 / cancel=取消接入 / on=断开连接 */
+function syncWsBtn() {
+  if (!wsBtn) return;
+  let act = 'off', txt = '接入实时数据';
+  if (WS_ENABLED && wsUserEnabled) {
+    if (ws && ws.readyState === 1) { act = 'on'; txt = '断开连接'; }
+    else { act = 'cancel'; txt = '取消接入'; }
+  }
+  wsBtn.dataset.act = act;
+  if (wsBtnTxt) wsBtnTxt.textContent = txt;
+}
 function setWsState(state, label) {
   if (wsPill) wsPill.dataset.ws = state;
   if (wsStatusEl) wsStatusEl.textContent = label;
+  syncWsBtn();
 }
 
 /* 骨骼 rest 局部变换快照：rig 就绪时采集（captureWsRest 由模型加载流程调用） */
@@ -2732,7 +2786,7 @@ function wsApplyJoint(st) {
 }
 
 function wsHandle(msg) {
-  if (!msg) return;
+  if (!wsUserEnabled || !msg) return;
   if (msg.type === 'state') {
     if (wsRigReady) wsApplyJoint(msg);
     else if (msg.joint) wsPending.set(msg.joint, msg);
@@ -2748,42 +2802,82 @@ function wsHandle(msg) {
   }
 }
 
-if (window.__WS_ENABLED) {
-  const wsUrl = window.__WS_URL || ('ws://' + location.hostname + ':2001');
-  let ws = null;
-  let wsRetry = 0;
-  let wsEverOpened = false;
-  function wsConnect() {
-    setWsState('connecting', '接入中');
-    try { ws = new WebSocket(wsUrl); } catch (e) { setTimeout(wsConnect, 2000); return; }
-    ws.onopen = () => {
-      wsRetry = 0;
-      setWsState('open', '已接入');
-      console.log('[WS] connected', wsUrl);
-      if (!wsEverOpened) {
-        wsEverOpened = true;
-        if (window.__petaToast) window.__petaToast('WebSocket 已接入 · 关节数据实时驱动');
-      }
-    };
-    ws.onmessage = (ev) => {
-      let msg = null;
-      try { msg = JSON.parse(ev.data); } catch (e) { return; }
-      wsHandle(msg);
-    };
-    ws.onclose = () => {
-      wsRetry++;
-      setWsState('closed', '未接入');
-      setTimeout(wsConnect, Math.min(10000, 1000 * wsRetry));
-    };
-    ws.onerror = () => { try { ws.close(); } catch (e) {} };
+/* ---------- 主动接入：点击按钮才连接，默认保持模型默认姿态 ---------- */
+function wsRestoreRest() {
+  wsPending.clear();
+  for (const [name, rest] of wsRestLocal) {
+    const bone = boneByName.get(name);
+    if (!bone) continue;
+    bone.quaternion.copy(rest.q);
+    bone.position.copy(rest.p);
+    bone.scale.copy(rest.s);
   }
-  wsConnect();
-  // 暴露发送接口，便于控制台/外部调用
-  window.__wsSend = (obj) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); };
-  window.__reloadJointLimits = () => { wsJointLimits = loadJointLimits(); };
-} else {
-  setWsState('closed', '未启用');
 }
+
+let wsRetry = 0;
+function wsConnect() {
+  if (!wsUserEnabled) return;
+  setWsState('connecting', '接入中');
+  let sock = null;
+  try { sock = new WebSocket(WS_URL); } catch (e) { wsRetryTimer = setTimeout(wsConnect, 2000); return; }
+  ws = sock;
+  sock.onopen = () => {
+    if (!wsUserEnabled || ws !== sock) { try { sock.close(); } catch (e) {} return; }
+    wsRetry = 0;
+    setWsState('open', '已接入');
+    console.log('[WS] connected', WS_URL);
+    if (window.__petaToast) window.__petaToast('WebSocket 已接入 · 关节数据实时驱动');
+  };
+  sock.onmessage = (ev) => {
+    let msg = null;
+    try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    wsHandle(msg);
+  };
+  sock.onclose = () => {
+    if (!wsUserEnabled || ws !== sock) return; // 用户已停止或已被新连接替换
+    wsRetry++;
+    setWsState('closed', '重连中');
+    wsRetryTimer = setTimeout(wsConnect, Math.min(10000, 1000 * wsRetry));
+  };
+  sock.onerror = () => { try { sock.close(); } catch (e) {} };
+}
+
+function wsStart() {
+  wsUserEnabled = true;
+  wsRetry = 0;
+  clearTimeout(wsRetryTimer);
+  if (window.__petaToast) window.__petaToast('正在接入 WebSocket…');
+  wsConnect();
+}
+function wsStop(toastMsg) {
+  wsUserEnabled = false;
+  clearTimeout(wsRetryTimer);
+  const sock = ws;
+  ws = null;
+  if (sock) { try { sock.onclose = null; sock.onmessage = null; sock.close(); } catch (e) {} }
+  setWsState('idle', '未接入');
+  wsRestoreRest(); // 回到默认姿态
+  if (window.__petaToast) window.__petaToast(toastMsg || '已断开 WebSocket · 模型恢复默认姿态');
+}
+
+if (wsBtn) {
+  wsBtn.addEventListener('click', () => {
+    if (!WS_ENABLED) return; // ?ws=off 时按钮禁用
+    if (wsUserEnabled) wsStop();
+    else wsStart();
+  });
+}
+if (!WS_ENABLED) {
+  if (wsBtn) wsBtn.disabled = true;
+  setWsState('closed', '未启用');
+} else {
+  setWsState('idle', '未接入'); // 默认待机，不主动连接
+}
+// 暴露发送/配置接口，便于控制台与外部调用
+window.__wsSend = (obj) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); };
+window.__reloadJointLimits = () => { wsJointLimits = loadJointLimits(); };
+window.__wsStart = wsStart;
+window.__wsStop = wsStop;
 </script>
 </body>
 </html>

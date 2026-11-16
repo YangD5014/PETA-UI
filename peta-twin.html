@@ -2589,13 +2589,33 @@ function initGrassBg() {
   loader.setDRACOLoader(draco);
   loader.load('https://cdn.jsdelivr.net/gh/YangD5014/PETA-UI@main/rigify-app/data/grass.glb', (gltf) => {
     const grass = gltf.scene;
-    let box = new THREE.Box3().setFromObject(grass);
+    /* SKY 天穹单独处理：半径1200 超出相机 far(600)，缩到 480；且不参与雾与取景盒 */
+    grass.updateMatrixWorld(true);
+    grass.traverse((o) => {
+      if (o.isMesh && /^SKY/.test(o.name)) {
+        o.scale.setScalar(0.4);
+        const sm = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of sm) m.fog = false; // 天空不被雾染色，保留蓝天白云
+      }
+    });
+    grass.updateMatrixWorld(true);
+    // 取景盒只统计草地/地面/花朵/飘瓣（排除天穹，避免 ground 被抬到天穹底部）
+    const fitBoxOf = () => {
+      const b = new THREE.Box3();
+      grass.traverse((o) => {
+        if (!o.isMesh || /^SKY/.test(o.name)) return;
+        if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        b.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));
+      });
+      return b;
+    };
+    let box = fitBoxOf();
     let size = box.getSize(new THREE.Vector3());
     // 模型若为 Z-up（最薄轴朝 Z）则转为 Y-up
     if (size.z < Math.min(size.x, size.y) * 0.35) {
       grass.rotation.x = -Math.PI / 2;
       grass.updateMatrixWorld(true);
-      box = new THREE.Box3().setFromObject(grass);
+      box = fitBoxOf();
       size = box.getSize(new THREE.Vector3());
     }
     // 水平居中、地面贴 y=0
